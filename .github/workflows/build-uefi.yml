@@ -1,0 +1,288 @@
+name: build-uefi-cupid
+
+# Build the Xiaomi 12 (cupid) UEFI platform in CI, so no local WSL2 is needed.
+#
+# What a green run means, and what it does not: it means the platform's own configuration is
+# consistent and the firmware compiles. It says nothing about booting on a phone. A successful
+# build is not a boot that works, and no boot is claimed here.
+#
+# The vendor's UEFI drivers (Binaries/cupid/) are the phone's own and are never committed, so the
+# FD cannot be linked without them. The build step therefore runs only when they are supplied:
+# pass `vendor_binaries_url` when triggering manually (a tar.gz whose root is the contents of
+# Binaries/cupid/) or set the repository secret VENDOR_BINARIES_URL. The tree, the validation and
+# the logs run on every trigger, and the vendor drivers are deleted before anything is uploaded.
+
+on:
+  workflow_dispatch:
+    inputs:
+      vendor_binaries_url:
+        description: 'Optional: URL of a tar.gz with the vendor UEFI drivers (contents of Binaries/cupid/). Private; never stored in artifacts.'
+        required: false
+        type: string
+      vendor_binaries_sha256:
+        description: 'Optional: SHA-256 of that tar.gz, to verify the download'
+        required: false
+        type: string
+      build_target:
+        description: 'UEFI build target'
+        required: false
+        default: RELEASE
+        type: choice
+        options: [RELEASE, DEBUG]
+  push:
+    branches: [main]
+    paths: ["uefi/**", ".github/workflows/build-uefi.yml"]
+  pull_request:
+    paths: ["uefi/**", ".github/workflows/build-uefi.yml"]
+
+permissions:
+  contents: read
+
+env:
+  DEVICE: cupid
+  # Pinned source revisions. Mu-Silicium's BASE is the commit HakiOS's UEFI is made on; the device
+  # repository's revision is this repository's own HEAD.
+  MU_SILICIUM_BASE: e51cd877e31c8fbb322032dc4cb6715e83d25ad3
+  HAKIOS_UEFI_REV: 1c6522893266157506c767e2ca427053ed3634a8
+  # A pinned runner image rather than a moving tag: the toolchain is part of the build.
+  RUNNER: ubuntu-24.04
+
+jobs:
+  uefi:
+    runs-on: ${{ env.RUNNER }}
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ github.workspace }}
+    env:
+      VENV: ${{ github.workspace }}/../hakios-venv
+      VENDOR_DIR: Mu-Silicium/Binaries/cupid
+
+    steps:
+      - name: Checkout the device repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          fetch-depth: 0
+
+      - name: Check disk space
+        run: |
+          set -euo pipefail
+          free_gb=$(df -BG --output=avail / | tail -1 | tr -dc '0-9')
+          echo "Free space on /: ${free_gb} GB"
+          if [ "$free_gb" -lt 12 ]; then
+            echo "::error ::Not enough disk space: ${free_gb} GB free. Mu-Silicium with its submodules and a build need at least 12 GB."
+            echo "::error ::Shallow clones are already used; a larger runner is the last resort, not the first."
+            exit 1
+          fi
+
+      - name: Install build dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          # Mu-Silicium's own list (setup_env.sh -p apt), minus mono-devel: the mu_nasm extension
+          # is pointed at the system nasm instead, as HakiOS's uefi/README.md describes.
+          sudo apt-get install -y --no-install-recommends \
+            build-essential git git-core curl ca-certificates gnupg gettext locales \
+            clang llvm lld nasm uuid-dev make \
+            gcc-aarch64-linux-gnu \
+            python3 python3-pip python3-venv python3-git
+          echo "apt: done"
+
+      - name: Check build dependencies
+        run: |
+          set -euo pipefail
+          missing=()
+          for c in git make clang lld nasm aarch64-linux-gnu-gcc python3 pip3; do
+            command -v "$c" >/dev/null 2>&1 || missing+=("$c")
+          done
+          python3 -c 'import tomllib' 2>/dev/null || missing+=("python3-tomllib (Python 3.11 or newer)")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error ::Missing build dependencies: ${missing[*]}"
+            echo "::error ::Install them with: sudo apt-get install -y build-essential clang llvm lld nasm uuid-dev gcc-aarch64-linux-gnu python3 python3-pip python3-venv"
+            exit 1
+          fi
+          echo "Every build dependency is present:"
+          python3 --version; clang --version | head -1; nasm -v; aarch64-linux-gnu-gcc --version | head -1
+
+      - name: Cache the build environment
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
+        with:
+          path: ${{ env.VENV }}
+          key: hakios-venv-${{ env.RUNNER }}-${{ env.MU_SILICIUM_BASE }}
+
+      - name: Clone HakiOS's UEFI
+        run: |
+          set -euo pipefail
+          git init -q hakios-uefi
+          git -C hakios-uefi remote add origin https://github.com/oosexgang/hakios-uefi.git
+          git -C hakios-uefi fetch --depth 1 origin "$HAKIOS_UEFI_REV"
+          git -C hakios-uefi checkout -q FETCH_HEAD
+          echo "hakios-uefi at $(git -C hakios-uefi rev-parse HEAD)"
+
+      - name: Assemble the UEFI tree
+        run: |
+          set -euo pipefail
+          # Mu-Silicium at the pinned BASE, shallow: the whole tree with submodules is about 5 GB.
+          # The .hakios-raw marker says the tree is a pristine clone; without it, re-clone.
+          if [ ! -f Mu-Silicium/.hakios-raw ]; then
+            rm -rf Mu-Silicium
+            git init -q Mu-Silicium
+            git -C Mu-Silicium remote add origin https://github.com/Project-Silicium/Mu-Silicium.git
+            git -C Mu-Silicium fetch --depth 1 origin "$MU_SILICIUM_BASE"
+            git -C Mu-Silicium checkout -q FETCH_HEAD
+            git -C Mu-Silicium submodule update --init --recursive --depth 1 \
+              || git -C Mu-Silicium submodule update --init --recursive
+            touch Mu-Silicium/.hakios-raw
+          fi
+          echo "Mu-Silicium at $(git -C Mu-Silicium rev-parse HEAD)"
+          # HakiOS's changes, then this device's platform: what `uefi/apply.sh cupid` does.
+          # Nothing upstream is modified; the patch and the platform are applied to this local copy.
+          git -C Mu-Silicium apply --whitespace=nowarn hakios-uefi/hakios.patch
+          cp -r hakios-uefi/files/. Mu-Silicium/
+          cp -r uefi/files/. Mu-Silicium/
+          ls Mu-Silicium/Platforms/Xiaomi/cupidPkg/cupid.dsc
+          ls Mu-Silicium/Silicon/Qualcomm/WaipioPkg/WaipioPkg.dsc.inc
+
+      - name: Build environment (python)
+        run: |
+          set -euo pipefail
+          if [ -x "$VENV/bin/python" ] && "$VENV/bin/python" -c 'import edk2_pytool_library' 2>/dev/null; then
+            echo "build environment restored from cache"
+          else
+            python3 -m venv "$VENV"
+            "$VENV/bin/pip" install --upgrade pip
+            # Mu-Silicium's own requirements file, pinned by the BASE commit above.
+            "$VENV/bin/pip" install -r Mu-Silicium/pip-requirements.txt
+            # mu_nasm comes through NuGet and wants Mono; point it at the system nasm instead.
+            D=Mu-Silicium/Mu_Basecore/BaseTools/Bin/mu_nasm_extdep
+            mkdir -p "$D/Linux-x86_64"
+            echo 'version: 20016.1.1' > "$D/extdep_state.yaml"
+            ln -sf /usr/bin/nasm "$D/Linux-x86_64/nasm"
+            ln -sf /usr/bin/ndisasm "$D/Linux-x86_64/ndisasm"
+          fi
+          "$VENV/bin/python" -c 'import edk2_pytool_library, edk2_pytool_extensions; print("edk2 python tools: ok")'
+
+      - name: Vendor UEFI drivers
+        id: vendor
+        env:
+          VENDOR_BINARIES_URL: ${{ secrets.VENDOR_BINARIES_URL }}
+        run: |
+          set -euo pipefail
+          url="${{ inputs.vendor_binaries_url }}"
+          [ -n "$url" ] || url="${VENDOR_BINARIES_URL:-}"
+          if [ -n "$url" ]; then
+            echo "Downloading the vendor UEFI drivers from the supplied URL"
+            tmp="$RUNNER_TEMP/vendor-cupid"
+            rm -rf "$tmp" && mkdir -p "$tmp"
+            curl -fsSL --retry 3 -o "$tmp/vendor.tar.gz" "$url"
+            want="${{ inputs.vendor_binaries_sha256 }}"
+            if [ -n "$want" ]; then
+              got=$(sha256sum "$tmp/vendor.tar.gz" | cut -d' ' -f1)
+              if [ "$got" != "$want" ]; then
+                echo "::error ::vendor_binaries_sha256 does not match: wanted $want, got $got"
+                exit 1
+              fi
+              echo "sha256 verified: $got"
+            fi
+            # Extract with Python's safe filter rather than tar itself: an archive with "../"
+            # members must not be able to write outside the temporary directory.
+            python3 -c '
+            import sys, tarfile
+            archive, dest = sys.argv[1], sys.argv[2]
+            with tarfile.open(archive, "r:gz") as t:
+                try:
+                    t.extractall(dest, filter="tar")
+                except TypeError:          # Python without the filter argument
+                    t.extractall(dest)
+            ' "$tmp/vendor.tar.gz" "$tmp"
+            mkdir -p "$VENDOR_DIR"
+            # Only the directories Mu-Silicium's driver list looks in; nothing else is copied.
+            for d in QcomPkg MdeModulePkg RawFiles; do
+              if [ -d "$tmp/$d" ]; then cp -r "$tmp/$d" "$VENDOR_DIR/"; fi
+            done
+            rm -rf "$tmp"
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "$(find "$VENDOR_DIR" -type f -print -quit 2>/dev/null)" ]; then
+            echo "Vendor UEFI drivers found in the tree"
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning ::No vendor UEFI drivers in $VENDOR_DIR -- the FD cannot be linked without them."
+            echo "::warning ::They are the phone's own: extract them from your own xbl (uefi/README.md in the common repository)."
+            echo "::warning ::Re-run with workflow_dispatch -> vendor_binaries_url, or set the VENDOR_BINARIES_URL secret."
+          fi
+
+      - name: Validate the platform
+        run: |
+          set -euo pipefail
+          mkdir -p logs
+          python3 uefi/tools/validate.py --device . --mu Mu-Silicium --json logs/validate.json \
+            | tee logs/validate.txt
+
+      - name: Build cupidPkg
+        if: steps.vendor.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          source "$VENV/bin/activate"
+          cd Mu-Silicium
+          python3 build_uefi.py -d "$DEVICE" -r "${{ inputs.build_target || 'RELEASE' }}" -c 2>&1 \
+            | tee "$GITHUB_WORKSPACE/logs/build.log"
+          fd=$(ls Build/cupidPkg/*/FV/SILICIUM_UEFI.fd)
+          ls -la "$fd"
+          # A linked FD is the only thing a successful compile produces; it is not a boot test.
+          [ -s "$fd" ] || { echo "::error ::the built FD is empty: $fd"; exit 1; }
+          echo "::notice ::Built $fd. This says nothing about booting on a phone."
+
+      - name: Remove the vendor drivers
+        if: always()
+        run: |
+          set -euo pipefail
+          # The vendor's binaries are never uploaded and never committed.
+          rm -rf "$VENDOR_DIR"
+          echo "vendor drivers removed from the workspace"
+
+      - name: Upload logs and the validation report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: cupid-uefi-logs
+          path: logs/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload the built UEFI
+        if: always() && steps.vendor.outputs.present == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: cupid-uefi-binaries
+          path: |
+            Mu-Silicium/Build/cupidPkg/**/FV/SILICIUM_UEFI.fd
+            Mu-Silicium/Build/cupidPkg/**/FV/SILICIUM_UEFI.fd.gz
+            Mu-Silicium/Mu-cupid*.img
+            Mu-Silicium/Mu-cupid*.bin
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Report
+        if: always()
+        env:
+          PRESENT: ${{ steps.vendor.outputs.present }}
+        run: |
+          set -uo pipefail
+          echo "## cupid UEFI" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Mu-Silicium: \`$MU_SILICIUM_BASE\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- hakios-uefi: \`$HAKIOS_UEFI_REV\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- runner: \`$RUNNER\`" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$PRESENT" = "true" ]; then
+            echo "- vendor drivers: supplied; the FD was linked" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- vendor drivers: **absent**; the FD was not linked" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "The vendor's UEFI drivers are the phone's own and are not in this repository. Supply them with"
+            echo "\`workflow_dispatch\` -> \`vendor_binaries_url\` (a tar.gz whose root is the contents of \`Binaries/cupid/\`)"
+            echo "or set the \`VENDOR_BINARIES_URL\` secret, then run again." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "A successful build means the platform compiles. It is not a boot test: no boot on a phone is claimed." >> "$GITHUB_STEP_SUMMARY"
