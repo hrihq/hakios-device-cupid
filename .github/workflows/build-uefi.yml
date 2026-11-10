@@ -138,7 +138,9 @@ jobs:
           echo "Mu-Silicium at $(git -C Mu-Silicium rev-parse HEAD)"
           # HakiOS's changes, then this device's platform: what `uefi/apply.sh cupid` does.
           # Nothing upstream is modified; the patch and the platform are applied to this local copy.
-          git -C Mu-Silicium apply --whitespace=nowarn hakios-uefi/hakios.patch
+          # The patch path is absolute: `git -C Mu-Silicium` resolves a relative path against
+          # Mu-Silicium/, not against the workspace.
+          git -C Mu-Silicium apply --whitespace=nowarn "$GITHUB_WORKSPACE/hakios-uefi/hakios.patch"
           cp -r hakios-uefi/files/. Mu-Silicium/
           cp -r uefi/files/. Mu-Silicium/
           ls Mu-Silicium/Platforms/Xiaomi/cupidPkg/cupid.dsc
