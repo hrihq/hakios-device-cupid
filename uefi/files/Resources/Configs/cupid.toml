@@ -4,7 +4,9 @@ requires_kernel_header = true
 [uefi_fd]
 # PROVISIONAL: the gap the phone's tree leaves after ADSP (0xA2E00000). Confirm against the phone's own
 # memory map before the first run (devices/cupid/uefi/README.md).
-base = 0xA2E00000
+# This is the address the memory map reserves for the UEFI FD itself (the region named "UEFI FD"),
+# not the reserved page before it -- BootShim loads the FD here.
+base = 0xA2F00000
 size = 0x300000
 
 [boot_image_kernel]

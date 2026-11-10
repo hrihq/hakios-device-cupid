@@ -167,8 +167,15 @@ def check_acpi(mu):
     text = open(inf, encoding="utf-8", errors="replace").read()
     refs = re.findall(r"^\s*ASL\|(\S+)", text, re.M)
     check(bool(refs), "the ACPI .inf names at least one table")
-    missing = [r for r in refs if not os.path.isfile(os.path.join(mu, "Silicium-ACPI", r))]
-    check(not missing, "every ACPI table it names is in the Silicium-ACPI submodule",
+    # An `ASL|` path is relative to an entry of DeviceBuild.py's PackagesPath, not to the .inf's own
+    # directory: "Waipio/DSDT.aml" is Silicium-ACPI/Silicon/Qualcomm/Waipio/DSDT.aml, and a device's
+    # own "DSDT.aml" is Silicium-ACPI/Platforms/<Vendor>/<device>/DSDT.aml.
+    roots = [os.path.join(mu, "Silicium-ACPI"),
+             os.path.join(mu, "Silicium-ACPI", "Silicon", "Qualcomm"),
+             os.path.join(mu, "Silicium-ACPI", "Platforms", "Xiaomi"),
+             mu]
+    missing = [r for r in refs if not any(os.path.isfile(os.path.join(root, r)) for root in roots)]
+    check(not missing, "every ACPI table it names is in the tree",
           "missing: %s" % ", ".join(missing) if missing else "%d tables" % len(refs))
 
 

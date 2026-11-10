@@ -149,7 +149,7 @@ jobs:
       - name: Build environment (python)
         run: |
           set -euo pipefail
-          if [ -x "$VENV/bin/python" ] && "$VENV/bin/python" -c 'import edk2_pytool_library' 2>/dev/null; then
+          if [ -x "$VENV/bin/python" ] && "$VENV/bin/python" -c 'import edk2toollib' 2>/dev/null; then
             echo "build environment restored from cache"
           else
             python3 -m venv "$VENV"
@@ -163,7 +163,9 @@ jobs:
             ln -sf /usr/bin/nasm "$D/Linux-x86_64/nasm"
             ln -sf /usr/bin/ndisasm "$D/Linux-x86_64/ndisasm"
           fi
-          "$VENV/bin/python" -c 'import edk2_pytool_library, edk2_pytool_extensions; print("edk2 python tools: ok")'
+          # The distributions are edk2-pytool-library and edk2-pytool-extensions; the modules are
+          # edk2toollib and edk2toolext.
+          "$VENV/bin/python" -c 'import edk2toollib, edk2toolext; print("edk2 python tools: ok")'
 
       - name: Vendor UEFI drivers
         id: vendor
