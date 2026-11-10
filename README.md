@@ -57,7 +57,7 @@ The kernel's settings are layered the way an Android kernel's are: the common ke
 
     configs/cupid.config          CONFIG_DEVICE="cupid"   and whatever is true of this phone only
     configs/cupid_defconfig       #include common_defconfig
-                                   #include <the SoC's fragment: sc7280.config for the SC7280 family>
+                                   #include <the SoC's fragment: sm8450.config for the SM8450 family>
                                    #include cupid.config
 
 Then `make cupid_defconfig`. Turn on only what this phone has been shown to do; `tools/hakios-config.py check` says what the
@@ -96,3 +96,19 @@ Every phone driver of the common repository is left out to begin with: their add
 for. Put one back in `configs/cupid.config` when it has been made to work here, and say so in `device.conf`.
 
 Check with `tools/hakios-device.py check cupid`.
+
+## Status
+
+**Scaffold. Nothing is built, nothing is run, no hardware has been touched.** The configuration holds together
+(`tools/hakios-device.py check cupid` passes) and builds only the SoC-identity driver and QEMU's own; every phone
+driver is left out.
+
+| Step | State |
+|---|---|
+| Device tree, SoC addresses | read from the phone's own tree (`soc.args`, 12 of 16 `soc_*` found; the 4 missing are the modem's) |
+| SoC layer `sm8450` | `socinfo` only; `cpufreq`, `thermal` and `pmic` need this SoC's own values |
+| UEFI platform `cupidPkg` | scaffold: the SoC package (`WaipioPkg`) and the phone's own reservations are real; the FD base and the ACPI DSDT are not |
+| Vendor UEFI drivers | absent, from the phone's own `xbl` |
+| Drivers | none ported |
+
+The order the documentation gives, and what each needs: [Port a device](https://github.com/oosexgang/hakios-xnu-kernel/blob/main/docs/porting/index.md).

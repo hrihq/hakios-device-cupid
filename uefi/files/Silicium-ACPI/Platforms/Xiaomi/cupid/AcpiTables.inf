@@ -1,0 +1,16 @@
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = AcpiTables
+  FILE_GUID                      = 7E374E25-8E01-4FEE-87F2-390C23C606CD
+  MODULE_TYPE                    = USER_DEFINED
+  VERSION_STRING                 = 1.0
+
+# The SM8450's own tables (Silicium-ACPI/Silicon/Qualcomm/Waipio). A device DSDT for cupid -- its I2C, GPIO,
+# USB and panel devices -- is still to be written; the SoC's DSDT is the starting point.
+[Binaries]
+  ASL|Waipio/DSDT.aml
+  ASL|Waipio/APIC.aml
+  ASL|Waipio/DBG2.aml
+  ASL|Waipio/FACP.aml
+  ASL|Waipio/GTDT.aml
+  ASL|Waipio/PPTT.aml

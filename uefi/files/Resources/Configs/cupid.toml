@@ -1,0 +1,15 @@
+[boot_shim]
+requires_kernel_header = true
+
+[uefi_fd]
+# PROVISIONAL: the gap the phone's tree leaves after ADSP (0xA2E00000). Confirm against the phone's own
+# memory map before the first run (devices/cupid/uefi/README.md).
+base = 0xA2E00000
+size = 0x300000
+
+[boot_image_kernel]
+kernel_compression = "gzip"
+append_dtb         = true
+
+[boot_image]
+header_version = 4
