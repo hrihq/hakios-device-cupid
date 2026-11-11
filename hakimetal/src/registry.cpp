@@ -26,10 +26,9 @@ BackendPtr Registry::find(const char* name) const {
     return nullptr;
 }
 
-const Capabilities& Registry::capabilities(const char* name) const {
-    static const Capabilities none{};
+Capabilities Registry::capabilities(const char* name) const {
     BackendPtr backend = find(name);
-    return backend ? backend->capabilities() : none;
+    return backend ? backend->capabilities() : Capabilities{};
 }
 
 Result<std::shared_ptr<IBackendDevice>> Registry::create_device(const char* name,

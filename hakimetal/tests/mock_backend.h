@@ -109,6 +109,7 @@ public:
     }
     Status draw_indexed(PrimitiveType type, uint32_t count,
                         const std::shared_ptr<IBackendBuffer>&, uint64_t offset) override {
+        (void)type;
         calls.push_back("encoder.draw_indexed");
         last_indexed_count = count;
         last_index_offset = offset;
@@ -163,8 +164,6 @@ public:
     std::vector<std::string> calls;
     BarrierDescriptor last_buffer_barrier;
     BarrierDescriptor last_texture_barrier;
-
-private:
     std::shared_ptr<MockRenderCommandEncoder> encoder_;
 };
 

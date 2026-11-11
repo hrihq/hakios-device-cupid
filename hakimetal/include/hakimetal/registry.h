@@ -23,7 +23,7 @@ public:
     void register_backend(BackendPtr backend);
 
     std::vector<const char*> backend_names() const;
-    const Capabilities& capabilities(const char* name) const;
+    Capabilities capabilities(const char* name) const;
     BackendPtr find(const char* name) const;
 
     // Create a device from a named backend. Returns NotAvailable when the backend is absent.

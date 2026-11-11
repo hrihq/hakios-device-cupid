@@ -59,10 +59,6 @@ std::shared_ptr<testing::MockBackend> make_mock() {
     return backend;
 }
 
-std::shared_ptr<testing::MockDevice> mock_device_from(const std::shared_ptr<testing::MockBackend>& b) {
-    return b->device();
-}
-
 }   // namespace
 
 int main() {
