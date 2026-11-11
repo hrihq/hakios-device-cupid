@@ -44,7 +44,13 @@ jobs:
           mkdir -p "$dir"
           base="https://raw.githubusercontent.com/torvalds/linux/$LINUX_REV/drivers/gpu/drm/msm/registers/adreno"
           for f in a6xx.xml a6xx_gmu.xml adreno_common.xml; do
-            curl -fsSL "$base/$f" -o "$dir/$f"
+            # raw.githubusercontent.com rate-limits; retry rather than fail the run
+            for attempt in 1 2 3 4 5; do
+              if curl -fsSL "$base/$f" -o "$dir/$f"; then break; fi
+              echo "attempt $attempt for $f failed; waiting"
+              sleep $((attempt * 10))
+            done
+            test -s "$dir/$f"
             echo "$f $(wc -c < "$dir/$f") bytes"
           done
           echo "dir=$dir" >> "$GITHUB_ENV"
