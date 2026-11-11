@@ -191,6 +191,7 @@ public:
     Result<std::shared_ptr<IBackendCommandQueue>>
         create_command_queue(const CommandQueueDescriptor&) override {
         calls.push_back("device.create_command_queue");
+        if (!queue_) return Result<std::shared_ptr<IBackendCommandQueue>>(Status::NotAvailable);
         return Result<std::shared_ptr<IBackendCommandQueue>>(queue_);
     }
     Result<std::shared_ptr<IBackendBuffer>> create_buffer(const BufferDescriptor& descriptor) override {
@@ -248,6 +249,9 @@ public:
     Capabilities capabilities() const override { return capabilities_; }
 
     Result<std::shared_ptr<IBackendDevice>> create_device(const DeviceDescriptor&) override {
+        // A device is a singleton here: creating it twice must not hand back a second, unwired
+        // object. A real backend has the same rule.
+        if (device_) return Result<std::shared_ptr<IBackendDevice>>(device_);
         auto device = std::make_shared<MockDevice>(capabilities_);
         device_ = device;
         return Result<std::shared_ptr<IBackendDevice>>(device);
