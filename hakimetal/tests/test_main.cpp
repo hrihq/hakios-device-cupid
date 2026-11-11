@@ -8,11 +8,44 @@
 #include <cstdio>
 #include <functional>
 #include <string>
+#include <thread>
 #include <vector>
 
 using namespace hakimetal;
 
 namespace {
+
+// A backend that answers Ok with a null handle. The frontend must turn that into BackendError rather
+// than handing the caller an object with nothing behind it.
+class NullQueueDevice final : public IBackendDevice {
+public:
+    const Capabilities& capabilities() const override { return capabilities_; }
+    std::vector<const char*> supported_extensions() const override { return {}; }
+    Result<std::shared_ptr<IBackendCommandQueue>>
+        create_command_queue(const CommandQueueDescriptor&) override {
+        return Result<std::shared_ptr<IBackendCommandQueue>>(
+            std::shared_ptr<IBackendCommandQueue>{});
+    }
+    Result<std::shared_ptr<IBackendBuffer>> create_buffer(const BufferDescriptor&) override {
+        return Result<std::shared_ptr<IBackendBuffer>>(Status::Unsupported);
+    }
+    Result<std::shared_ptr<IBackendTexture>> create_texture(const TextureDescriptor&) override {
+        return Result<std::shared_ptr<IBackendTexture>>(Status::Unsupported);
+    }
+    Result<std::shared_ptr<IBackendRenderPipeline>>
+        create_render_pipeline(const RenderPipelineDescriptor&) override {
+        return Result<std::shared_ptr<IBackendRenderPipeline>>(Status::Unsupported);
+    }
+    Result<std::shared_ptr<IBackendFence>> create_fence(const FenceDescriptor&) override {
+        return Result<std::shared_ptr<IBackendFence>>(Status::Unsupported);
+    }
+    Result<std::shared_ptr<IBackendEvent>> create_event(const EventDescriptor&) override {
+        return Result<std::shared_ptr<IBackendEvent>>(Status::Unsupported);
+    }
+
+private:
+    Capabilities capabilities_;
+};
 
 int g_failures = 0;
 std::vector<std::string> g_tests;
@@ -124,13 +157,6 @@ int main() {
     });
 
     test("render pipeline creation is reported unsupported when there is no shader path", [] {
-        auto backend = std::make_shared<testing::MockBackend>(mock_capabilities());
-        backend->capabilities();
-        auto device = backend->create_device(DeviceDescriptor{}).value();
-        // take the device and clear the shader path
-        auto mock = backend->device();
-        // the mock device's capabilities are fixed at construction; build a second backend instead
-        (void)mock;
         Capabilities no_shader = mock_capabilities();
         no_shader.shader_translation = false;
         auto limited = std::make_shared<testing::MockBackend>(no_shader);
@@ -284,6 +310,65 @@ int main() {
         check(device.status() == Status::Unsupported,
               "the status is Unsupported, not BackendError");
         (void)0;
+    });
+
+    test("a default-constructed Result is not a success", [] {
+        Result<Buffer> result;
+        check(!result.ok(), "a default Result must not report ok");
+        check(!static_cast<bool>(result), "a default Result must not convert to true");
+        check(result.status() == Status::NotAvailable, "the status is NotAvailable");
+        check(!result.has_value(), "there is no value");
+    });
+
+    test("a backend that answers Ok with a null handle is a BackendError, not an empty object", [] {
+        Device device(std::make_shared<NullQueueDevice>());
+        auto queue = device.create_command_queue(CommandQueueDescriptor{});
+        check(!queue, "a null handle must not become a success");
+        check(queue.status() == Status::BackendError, "the status is BackendError");
+    });
+
+    test("the render pass descriptor reaches the backend typed", [] {
+        auto backend = make_mock();
+        Device device(backend->create_device(DeviceDescriptor{}).value());
+        auto queue = device.create_command_queue(CommandQueueDescriptor{}).value();
+        auto command_buffer = queue.create_command_buffer().value();
+        auto texture = device.create_texture(TextureDescriptor{}).value();
+
+        RenderPassDescriptor pass{};
+        pass.color_attachment_count = 2;
+        pass.color_attachments[0].texture = texture.handle();
+        pass.color_attachments[0].load_action = LoadAction::Clear;
+        pass.color_attachments[0].clear_color[0] = 0.25f;
+        auto encoder = command_buffer.begin_render_pass(pass);
+        check(static_cast<bool>(encoder), "begin_render_pass should succeed");
+
+        auto& mock_buffer = backend->device()->queue_->buffer_;
+        check(mock_buffer->render_pass_color_attachment_count == 2,
+              "the backend saw the descriptor's attachment count, not a void*");
+        check(mock_buffer->render_pass_clear_color[0] == 0.25f,
+              "the backend saw the descriptor's clear colour");
+    });
+
+    test("the registry takes its lock: concurrent registration and lookup do not crash", [] {
+        auto& registry = Registry::instance();
+        std::vector<std::thread> threads;
+        for (int i = 0; i < 8; ++i) {
+            threads.emplace_back([&registry, i] {
+                for (int j = 0; j < 200; ++j) {
+                    auto backend = std::make_shared<testing::MockBackend>(mock_capabilities());
+                    backend->name();   // touch the object the registry will hold
+                    registry.register_backend(backend);
+                    (void)registry.find("mock");
+                    (void)registry.backend_names();
+                    (void)registry.capabilities("mock");
+                    (void)registry.default_backend();
+                    (void)registry.create_device("mock", DeviceDescriptor{});
+                }
+                (void)i;
+            });
+        }
+        for (auto& thread : threads) thread.join();
+        check(true, "the registry survived concurrent use");
     });
 
     std::fprintf(stderr, "hakimetal-tests: %zu test(s), %d failure(s)\n", g_tests.size(), g_failures);

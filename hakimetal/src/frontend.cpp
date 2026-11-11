@@ -22,6 +22,7 @@ Result<CommandQueue> Device::create_command_queue(const CommandQueueDescriptor& 
     if (!device_) return Result<CommandQueue>(Status::NotAvailable);
     auto result = device_->create_command_queue(descriptor);
     if (!result) return Result<CommandQueue>(result.status());
+    if (!result.value()) return Result<CommandQueue>(Status::BackendError);
     return Result<CommandQueue>(CommandQueue(result.value(), capabilities()));
 }
 
@@ -29,6 +30,7 @@ Result<Buffer> Device::create_buffer(const BufferDescriptor& descriptor) {
     if (!device_) return Result<Buffer>(Status::NotAvailable);
     auto result = device_->create_buffer(descriptor);
     if (!result) return Result<Buffer>(result.status());
+    if (!result.value()) return Result<Buffer>(Status::BackendError);
     return Result<Buffer>(Buffer(result.value(), capabilities()));
 }
 
@@ -36,6 +38,7 @@ Result<Texture> Device::create_texture(const TextureDescriptor& descriptor) {
     if (!device_) return Result<Texture>(Status::NotAvailable);
     auto result = device_->create_texture(descriptor);
     if (!result) return Result<Texture>(result.status());
+    if (!result.value()) return Result<Texture>(Status::BackendError);
     return Result<Texture>(Texture(result.value(), capabilities()));
 }
 
@@ -43,6 +46,7 @@ Result<RenderPipeline> Device::create_render_pipeline(const RenderPipelineDescri
     if (!device_) return Result<RenderPipeline>(Status::NotAvailable);
     auto result = device_->create_render_pipeline(descriptor);
     if (!result) return Result<RenderPipeline>(result.status());
+    if (!result.value()) return Result<RenderPipeline>(Status::BackendError);
     return Result<RenderPipeline>(RenderPipeline(result.value(), capabilities()));
 }
 
@@ -50,6 +54,7 @@ Result<Fence> Device::create_fence(const FenceDescriptor& descriptor) {
     if (!device_) return Result<Fence>(Status::NotAvailable);
     auto result = device_->create_fence(descriptor);
     if (!result) return Result<Fence>(result.status());
+    if (!result.value()) return Result<Fence>(Status::BackendError);
     return Result<Fence>(Fence(result.value()));
 }
 
@@ -57,6 +62,7 @@ Result<Event> Device::create_event(const EventDescriptor& descriptor) {
     if (!device_) return Result<Event>(Status::NotAvailable);
     auto result = device_->create_event(descriptor);
     if (!result) return Result<Event>(result.status());
+    if (!result.value()) return Result<Event>(Status::BackendError);
     return Result<Event>(Event(result.value()));
 }
 
@@ -68,6 +74,7 @@ Result<CommandBuffer> CommandQueue::create_command_buffer() {
     if (!queue_) return Result<CommandBuffer>(Status::NotAvailable);
     auto result = queue_->create_command_buffer();
     if (!result) return Result<CommandBuffer>(result.status());
+    if (!result.value()) return Result<CommandBuffer>(Status::BackendError);
     return Result<CommandBuffer>(CommandBuffer(result.value(), capabilities_));
 }
 
@@ -77,7 +84,7 @@ Result<CommandBuffer> CommandQueue::create_command_buffer() {
 
 Result<RenderCommandEncoder> CommandBuffer::begin_render_pass(const RenderPassDescriptor& descriptor) {
     if (!buffer_) return Result<RenderCommandEncoder>(Status::NotAvailable);
-    auto result = buffer_->begin_render_pass(&descriptor);
+    auto result = buffer_->begin_render_pass(descriptor);
     if (!result) return Result<RenderCommandEncoder>(result.status());
     auto encoder = std::dynamic_pointer_cast<IBackendRenderCommandEncoder>(result.value());
     if (!encoder) return Result<RenderCommandEncoder>(Status::BackendError);

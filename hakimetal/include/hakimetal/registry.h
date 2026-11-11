@@ -10,11 +10,14 @@
 #include "hakimetal/backend.h"
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
 namespace hakimetal {
 
+// The registry is a process-wide singleton, so it is safe to use from more than one thread: every
+// public method takes the lock. The objects it hands out are not thread-safe; see backend.h.
 class Registry {
 public:
     static Registry& instance();
@@ -36,6 +39,7 @@ public:
 
 private:
     Registry() = default;
+    mutable std::mutex mutex_;
     std::vector<BackendPtr> backends_;
 };
 

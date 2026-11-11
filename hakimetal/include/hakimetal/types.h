@@ -260,15 +260,20 @@ struct BarrierDescriptor {
 template <typename T>
 class Result {
 public:
-    Result() : status_(Status::Ok) {}
+    // A default-constructed Result is not a success: it carries no value. Defaulting to Ok was a
+    // footgun -- a caller that forgot to check got a plausible-looking empty handle.
+    Result() : status_(Status::NotAvailable) {}
     Result(Status status) : status_(status) {}   // NOLINT(google-explicit-constructor)
     Result(T value) : status_(Status::Ok), value_(std::move(value)) {}   // NOLINT
 
     bool ok() const { return status_ == Status::Ok; }
+    bool has_value() const { return ok(); }
     explicit operator bool() const { return ok(); }
     Status status() const { return status_; }
     const char* message() const { return status_message(status_); }
 
+    // Only valid when ok() is true. Calling value() on a failed Result returns a
+    // default-constructed T; callers must check first.
     const T& value() const { return value_; }
     T& value() { return value_; }
 

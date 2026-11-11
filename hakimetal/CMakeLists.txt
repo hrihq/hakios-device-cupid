@@ -23,6 +23,10 @@ add_library(hakimetal STATIC
 
 target_include_directories(hakimetal PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
+# dlopen/dlsym live in libdl on glibc < 2.34 and on some BSDs; on newer glibc they are in libc.
+# CMAKE_DL_LIBS is empty where they are not needed.
+target_link_libraries(hakimetal PUBLIC ${CMAKE_DL_LIBS})
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(hakimetal PRIVATE -Wall -Wextra -Wpedantic)
 endif()

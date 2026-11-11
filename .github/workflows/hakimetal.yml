@@ -18,11 +18,25 @@ jobs:
   build-and-test:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+        include:
+          - compiler: gcc
+            cc: gcc
+            cxx: g++
+          - compiler: clang
+            cc: clang
+            cxx: clang++
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Configure
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
         run: cmake -S hakimetal -B build -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
@@ -42,3 +56,24 @@ jobs:
           else
             echo "no vulkaninfo on this runner; the Vulkan backend is expected to report absence"
           fi
+
+  thread-sanitizer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+
+      - name: Configure with ThreadSanitizer
+        env:
+          CC: gcc
+          CXX: g++
+        run: >
+          cmake -S hakimetal -B build-tsan -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer -g"
+
+      - name: Build
+        run: cmake --build build-tsan --parallel 2
+
+      - name: Test
+        run: ./build-tsan/hakimetal-tests

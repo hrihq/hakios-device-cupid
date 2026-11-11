@@ -12,6 +12,7 @@
 
 #include "hakimetal/types.h"
 
+#include <array>
 #include <memory>
 #include <vector>
 
@@ -50,6 +51,28 @@ public:
     virtual Result<std::shared_ptr<IBackendCommandBuffer>> create_command_buffer() = 0;
 };
 
+// A render pass attachment and the pass that holds them. These live here, next to the interface that
+// consumes them, so the backend sees a typed reference and not a void*. They only need IBackendTexture,
+// which is forward-declared above.
+struct RenderPassAttachmentDescriptor {
+    std::shared_ptr<IBackendTexture> texture;   // backend handle; the frontend's Texture exposes it
+    LoadAction load_action = LoadAction::Load;
+    StoreAction store_action = StoreAction::Store;
+    float clear_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+    float clear_depth = 1.0f;
+    uint32_t clear_stencil = 0;
+    bool used = false;
+};
+
+struct RenderPassDescriptor {
+    // std::array rather than a C array: GCC 13 hits an internal compiler error gimplifying a C array
+    // of aggregates whose members carry default initializers, which is what this used to be.
+    std::array<RenderPassAttachmentDescriptor, 8> color_attachments = {};
+    uint32_t color_attachment_count = 0;
+    RenderPassAttachmentDescriptor depth_attachment = {};
+    RenderPassAttachmentDescriptor stencil_attachment = {};
+};
+
 class IBackendCommandBuffer : public IBackendResource {
 public:
     virtual Status commit() = 0;
@@ -58,8 +81,8 @@ public:
                                   const BarrierDescriptor& descriptor) = 0;
     virtual Status texture_barrier(const std::shared_ptr<IBackendTexture>& texture,
                                    const BarrierDescriptor& descriptor) = 0;
-    // The render pass descriptor is defined in command_buffer.h; the backend only sees a reference.
-    virtual Result<std::shared_ptr<IBackendResource>> begin_render_pass(const void* descriptor) = 0;
+    virtual Result<std::shared_ptr<IBackendResource>>
+        begin_render_pass(const RenderPassDescriptor& descriptor) = 0;
 };
 
 // The encoder operations a frontend can issue inside a render pass. A backend that cannot do one

@@ -1,5 +1,7 @@
 #include "hakimetal/hakimetal.h"
 
+#include <mutex>
+
 namespace hakimetal {
 
 Registry& Registry::instance() {
@@ -8,10 +10,12 @@ Registry& Registry::instance() {
 }
 
 void Registry::register_backend(BackendPtr backend) {
+    std::lock_guard<std::mutex> lock(mutex_);
     if (backend) backends_.push_back(std::move(backend));
 }
 
 std::vector<const char*> Registry::backend_names() const {
+    std::lock_guard<std::mutex> lock(mutex_);
     std::vector<const char*> names;
     names.reserve(backends_.size());
     for (const auto& backend : backends_) names.push_back(backend->name());
@@ -20,6 +24,7 @@ std::vector<const char*> Registry::backend_names() const {
 
 BackendPtr Registry::find(const char* name) const {
     if (!name) return nullptr;
+    std::lock_guard<std::mutex> lock(mutex_);
     for (const auto& backend : backends_) {
         if (std::string(backend->name()) == name) return backend;
     }
@@ -39,6 +44,7 @@ Result<std::shared_ptr<IBackendDevice>> Registry::create_device(const char* name
 }
 
 BackendPtr Registry::default_backend() const {
+    std::lock_guard<std::mutex> lock(mutex_);
     return backends_.empty() ? nullptr : backends_.front();
 }
 

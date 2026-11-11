@@ -156,14 +156,21 @@ public:
         last_texture_barrier = d;
         return Status::Ok;
     }
-    Result<std::shared_ptr<IBackendResource>> begin_render_pass(const void*) override {
+    Result<std::shared_ptr<IBackendResource>> begin_render_pass(
+        const RenderPassDescriptor& descriptor) override {
         calls.push_back("command_buffer.begin_render_pass");
+        render_pass_color_attachment_count = descriptor.color_attachment_count;
+        if (descriptor.color_attachment_count > 0) {
+            render_pass_clear_color[0] = descriptor.color_attachments[0].clear_color[0];
+        }
         return Result<std::shared_ptr<IBackendResource>>(encoder_);
     }
 
     std::vector<std::string> calls;
     BarrierDescriptor last_buffer_barrier;
     BarrierDescriptor last_texture_barrier;
+    uint32_t render_pass_color_attachment_count = 0;
+    float render_pass_clear_color[4] = {};
     std::shared_ptr<MockRenderCommandEncoder> encoder_;
 };
 
