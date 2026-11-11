@@ -9,7 +9,7 @@ name: check-device-cupid
 
 on:
   push:
-    branches: [main, adreno-730-cupid]
+    branches: [main, adreno-730-cupid, hakimetal]
     paths: ["**", "!uefi/**", "!.github/workflows/build-uefi.yml"]
   pull_request:
     paths: ["**", "!uefi/**", "!.github/workflows/build-uefi.yml"]
