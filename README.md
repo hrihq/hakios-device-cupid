@@ -114,6 +114,17 @@ driver is left out.
 
 The order the documentation gives, and what each needs: [Port a device](https://github.com/oosexgang/hakios-xnu-kernel/blob/main/docs/porting/index.md).
 
+## HakiMetal
+
+`hakimetal/` is a separate component on the `hakimetal` branch: an experimental, backend-independent
+graphics API for HakiOS. It is not Apple Metal and does not claim to be; it follows the object model of
+Apple's *documented* Metal concepts behind a backend interface, so a backend can be Vulkan, something
+else, or nothing. Vulkan is not assumed to exist -- the Vulkan backend loads it at runtime and reports
+absence -- and nothing in it writes GPU registers.
+
+[architecture](hakimetal/docs/architecture.md) | [Metal-to-Vulkan matrix](hakimetal/docs/metal-to-vulkan.md) |
+[limitations](hakimetal/docs/limitations.md)
+
 ## GPU
 
 The GPU is a different generation from the reference phone's, so it is a second implementation of the
