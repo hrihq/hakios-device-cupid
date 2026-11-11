@@ -3,7 +3,10 @@
 The Xiaomi 12's platform for HakiOS's UEFI (`uefi/` of the common repository: Mu-Silicium with HakiOS's changes and banner).
 It is modelled on `negroni` (the OnePlus 10 Pro, the same `WaipioPkg` SoC package) and on `redwood` (HakiOS's own boot path).
 
-**Status: scaffold, not built, not run.** Nothing here has been compiled or started. What is real and what is not:
+**Status: the platform's configuration is validated in CI; the firmware itself has not been built or started.**
+`.github/workflows/build-uefi.yml` runs on every push and on `workflow_dispatch`: it assembles the tree,
+validates it (37 checks, all passing) and uploads the report. The build step is skipped until the vendor's
+UEFI drivers are supplied, because they are the phone's own. What is real and what is not:
 
 | Part | State |
 |---|---|
