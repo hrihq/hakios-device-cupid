@@ -75,7 +75,9 @@
       "kind": "gmu",
       "dt": "/soc/qcom,gmu@3d69000",
       "reg": "gmu",
-      "status": "uncertain"
+      "status": "uncertain",
+      "container": true,
+      "container_note": "the reg is a coarse region that covers the GPUCC, gpu_isense, gpu_cx_misc and the seven control registers; it is not the GMU's own register range"
     },
     {
       "name": "gmu_pdc",
@@ -165,7 +167,9 @@
       "kind": "smmu",
       "dt": "/soc/qcom,kgsl-iommu@3da0000",
       "reg": "",
-      "status": "verified"
+      "status": "verified",
+      "alias_of": "smmu",
+      "alias_note": "the same physical region as kgsl-smmu@3da0000, described by the context-bank container node qcom,kgsl-iommu@3da0000"
     },
     {
       "name": "gdsc_cx",

@@ -1,0 +1,150 @@
+{
+  "device": "cupid",
+  "soc": "sm8450",
+  "title": "Xiaomi 12",
+  "generated_by": "tools/gpu-blocker-report.py",
+  "source": "gpu/a730_resources.json",
+  "tree": "uefi/files/Resources/DTBs/cupid.dtb",
+  "summary": {
+    "total": 15,
+    "unresolved": 13,
+    "resolved": 2
+  },
+  "blockers": [
+    {
+      "id": "uncertain-the-gmus-base",
+      "what": "the GMU's base",
+      "detail": "this tree: 0x03d68000, size 0x00037000 (node /soc/qcom,gmu@3d69000, reg-name 'gmu') | Linux sm8450.dtsi: 0x03d6a000, size 0x00035000",
+      "blocks": "phase 2 review -- it is a fact the port starts from",
+      "why": "The phone's own tree wins for this phone. Both regions end at 0x03d9f000; the difference is the start, 0x2000. The node's unit address (0x3d69000) matches neither. HakiOS's SC7280 (redwood) driver uses 0x3d6a000. Which base the A730's GMU is reached at is only decidable on the phone.",
+      "resolution": "a run on the phone, or a vendor kernel source that carries the value",
+      "status": "unresolved"
+    },
+    {
+      "id": "uncertain-the-gmus-size",
+      "what": "the GMU's size",
+      "detail": "this tree: 0x00037000 | Linux sm8450.dtsi: 0x00035000",
+      "blocks": "phase 2 review -- it is a fact the port starts from",
+      "why": "follows the base",
+      "resolution": "a run on the phone, or a vendor kernel source that carries the value",
+      "status": "unresolved"
+    },
+    {
+      "id": "uncertain-the-gmus-region-overlaps-the-gpucc",
+      "what": "the GMU's region overlaps the GPUCC",
+      "detail": "this tree: gmu 0x03d68000+0x37000 ends at 0x03d9f000; gpucc is 0x03d90000+0xa000 | Linux sm8450.dtsi: ",
+      "blocks": "phase 2 review -- it is a fact the port starts from",
+      "why": "Both the phone's tree and Linux's sm8450.dtsi have the GMU's region covering the GPUCC. The GMU's reg appears to be a coarse container, not its own register range. The port must not treat the whole region as GMU registers.",
+      "resolution": "a run on the phone, or a vendor kernel source that carries the value",
+      "status": "unresolved"
+    },
+    {
+      "id": "uncertain-the-a730s-hardware-clock-gating-and-protection-v",
+      "what": "the A730's hardware clock gating and protection values",
+      "detail": "this tree: not in the device tree | Linux sm8450.dtsi: ",
+      "blocks": "phase 2 review -- it is a fact the port starts from",
+      "why": "53 hwcg and 46 protect values exist only in a generated table whose source is a private vendor checkout. They are not implemented and are not in this configuration.",
+      "resolution": "a run on the phone, or a vendor kernel source that carries the value",
+      "status": "unresolved"
+    },
+    {
+      "id": "uncertain-the-gpu-speed-bin-and-chip-id",
+      "what": "the GPU speed bin and chip id",
+      "detail": "this tree: no qcom,gpu-speed-bin, no qcom,chipid | Linux sm8450.dtsi: ",
+      "blocks": "phase 2 review -- it is a fact the port starts from",
+      "why": "The A730's performance is chosen from its operating points, not from a speed bin. Nothing here to read.",
+      "resolution": "a run on the phone, or a vendor kernel source that carries the value",
+      "status": "unresolved"
+    },
+    {
+      "id": "disagreement-four-rbbm-secure-video-offsets",
+      "what": "four RBBM secure-video offsets",
+      "detail": "this configuration says 0x0f400, 0x0f800, 0x0f802, 0x0f803; the generated table says 0x0f4000, 0x0f8000, 0x0f8002, 0x0f8003",
+      "blocks": "nothing -- it is recorded so a later reader does not have to rediscover it",
+      "why": "The GPU block is 0x40000 bytes = 0x10000 dwords. Only Linux's offsets fall inside it; the generated table's are one hex digit larger and outside the block. Linux is taken as correct.",
+      "resolution": "resolved: the configuration takes the value that fits the GPU block",
+      "status": "resolved"
+    },
+    {
+      "id": "disagreement-cp_sqe_instr_base-and-rb_cmp_dbg_eco_cntl",
+      "what": "CP_SQE_INSTR_BASE and RB_CMP_DBG_ECO_CNTL",
+      "detail": "this configuration says the same, from the entries whose variants are A6XX-A7XX (the dump also lists 0x0816 and 0x8f02 for A8XX-); the generated table says 0x0830 and 0x8e28",
+      "blocks": "nothing -- it is recorded so a later reader does not have to rediscover it",
+      "why": "Agree for the A730; they only differ if the wrong variant is read.",
+      "resolution": "resolved: the configuration takes the value that fits the GPU block",
+      "status": "resolved"
+    },
+    {
+      "id": "firmware-gmu",
+      "what": "the GMU's firmware image",
+      "detail": "gmu_gen70000.bin, loaded into the GMU's TCM and its memory",
+      "blocks": "phase 3 -- GMU initialization",
+      "why": "the GMU will not start without it, and it is not in any repository",
+      "resolution": "pull it from the phone's own /vendor/firmware; never commit it",
+      "status": "unresolved"
+    },
+    {
+      "id": "firmware-sqe",
+      "what": "the 3D core's microcode",
+      "detail": "a730_sqe.fw, loaded into the core's instruction ring",
+      "blocks": "phase 4 -- the 3D core",
+      "why": "the core has no instruction stream without it",
+      "resolution": "pull it from the phone's own /vendor/firmware; never commit it",
+      "status": "unresolved"
+    },
+    {
+      "id": "firmware-zap",
+      "what": "the zap shader image",
+      "detail": "a730_zap, authenticated by TrustZone into 0x08b91a000 (the tree's gpu_micro_code_region)",
+      "blocks": "phase 4 -- the 3D core and secure mode",
+      "why": "without a signed image the core stays in secure mode and nothing draws",
+      "resolution": "pull it from the phone's own /vendor/firmware; never commit it",
+      "status": "unresolved"
+    },
+    {
+      "id": "trustzone",
+      "what": "whether this kernel may call TrustZone, and whether the zap image is accepted",
+      "detail": "the two calls the A6xx driver already makes, and the zap shader's signature check",
+      "blocks": "phase 4 -- secure mode",
+      "why": "a refusal here ends the GPU bring-up and no source can predict it",
+      "resolution": "a run on the phone, with the zap image present",
+      "status": "unresolved"
+    },
+    {
+      "id": "smmu-acceptance",
+      "what": "whether the SMMU accepts the streams and contexts the tree describes",
+      "detail": "gfx3d_user 0, gfx3d_lpac 1, gfx3d_secure 2, the GMU on stream 5",
+      "blocks": "phase 3 and 4",
+      "why": "the stream ids are read from the tree; whether the hardware accepts them is not knowable from a source",
+      "resolution": "a run on the phone",
+      "status": "unresolved"
+    },
+    {
+      "id": "power-stability",
+      "what": "whether the GPU is stable at its top operating point",
+      "detail": "12 levels, 220 MHz to 818 MHz, each with a bus and an ACD level",
+      "blocks": "phase 6 -- performance",
+      "why": "the levels are read from the tree; stability is a measurement",
+      "resolution": "a run on the phone, at each level",
+      "status": "unresolved"
+    },
+    {
+      "id": "no-physical-device",
+      "what": "a Xiaomi 12 (cupid) to run on",
+      "detail": "every register write, every sequence, every performance number",
+      "blocks": "phases 3 to 6",
+      "why": "a wrong register ends the run, often silently, and no source can catch it",
+      "resolution": "the user supplies a device and the firmware pulled from it",
+      "status": "unresolved"
+    },
+    {
+      "id": "uefi-vendor-drivers",
+      "what": "the vendor UEFI drivers needed to link the UEFI firmware volume",
+      "detail": "the phone's own xbl drivers, extracted and never committed",
+      "blocks": "the UEFI build (a separate work stream from this one)",
+      "why": "the FD cannot link without them",
+      "resolution": "the user supplies them, or the workflow is run with VENDOR_BINARIES_URL",
+      "status": "unresolved"
+    }
+  ]
+}

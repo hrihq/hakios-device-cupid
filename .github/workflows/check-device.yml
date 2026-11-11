@@ -58,6 +58,16 @@ jobs:
             --linux "$dir" \
             --check-header gpu/hakios.adreno-a730.h
 
+      - name: Run the address layer tests
+        run: |
+          set -euo pipefail
+          python3 tools/gpu-address-tests.py
+
+      - name: Check the blocker report matches the configuration
+        run: |
+          set -euo pipefail
+          python3 tools/gpu-blocker-report.py --check docs/gpu-blockers.json
+
       - name: Checkout the common repository
         run: |
           set -euo pipefail
