@@ -1,0 +1,46 @@
+# gpu-facts.txt: the Xiaomi 12 (cupid) GPU, read out of its own device tree by tools/gpu-facts.py.
+# Do not edit by hand; change the tree and make it again.
+gpu.node              /soc/qcom,kgsl-3d0@3d00000
+gpu.compatible        qcom,adreno-gpu-gen7-0-1
+gpu.model             Adreno730v2
+gpu.initial-pwrlevel  10
+gpu.ubwc-mode          0x4
+gpu.min-access-length  0x20
+gpu.thermal-zones     gpuss-0 gpuss-1
+gpu.reg.gpu            0x3d00000 0x40000
+gmu.reg.gmu            0x3d68000 0x37000
+gpucc.reg.cc_base      0x3d90000 0xa000
+gcc.reg.cc_base        0x100000 0x1f4200
+smmu.reg.base          0x3da0000 0x40000
+smmu.gfx3d_lpac        stream 1 (iommus 311 1 1024)
+smmu.gfx3d_secure      stream 2 (iommus 311 2 1024)
+smmu.gfx3d_user        stream 0 (iommus 311 0 1024)
+gpu.pwrlevels         12
+  level 0             220000000 Hz  bus 2  acd 0x00000000
+  level 1             285000000 Hz  bus 2  acd 0x882f5ffd
+  level 2             317000000 Hz  bus 2  acd 0x00000000
+  level 3             350000000 Hz  bus 3  acd 0x882f5ffd
+  level 4             421000000 Hz  bus 6  acd 0xa82e5ffd
+  level 5             492000000 Hz  bus 6  acd 0x882e5ffd
+  level 6             545000000 Hz  bus 8  acd 0x882e5ffd
+  level 7             599000000 Hz  bus 8  acd 0x882e5ffd
+  level 8             640000000 Hz  bus 10  acd 0xa82d5ffd
+  level 9             734000000 Hz  bus 10  acd 0x882d5ffd
+  level 10            791000000 Hz  bus 11  acd 0x882c5ffd
+  level 11            818000000 Hz  bus 11  acd 0x882c5ffd
+gpu.zap.memory-region  /reserved-memory/gpu_micro_code_region@8b91a000 0x8b91a000 0x2000
+gpu.mempool.0          page-size 0x1000
+gpu.mempool.1          page-size 0x2000
+gpu.mempool.2          page-size 0x10000
+gpu.mempool.3          page-size 0x20000
+gpu.mempool.4          page-size 0x40000
+gpu.mempool.5          page-size 0x100000
+gpu.gpu_cc_cx_gdsc     0x3d99108
+gpu.gpu_cc_gx_gdsc     0x3d9905c
+gpu.gpu_cc_cx_hw_ctrl  0x3d9953c
+gpu.gpu_cc_gx_sw_reset 0x3d99058
+gpu.gpu_cc_gx_acd_reset 0x3d99358
+gpu.gpu_cc_gx_acd_iroot_reset 0x3d9958c
+gpu.gpu_cc_gx_domain_addr 0x3d99504
+tsens0.reg             0xc263000 0x1ff
+tsens1.reg             0xc265000 0x1ff

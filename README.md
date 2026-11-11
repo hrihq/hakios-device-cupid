@@ -110,5 +110,14 @@ driver is left out.
 | UEFI platform `cupidPkg` | scaffold: the SoC package (`WaipioPkg`) and the phone's own reservations are real; the FD base and the ACPI DSDT are not |
 | Vendor UEFI drivers | absent, from the phone's own `xbl` |
 | Drivers | none ported |
+| GPU (Adreno 730) | facts read from the phone's tree and checked (`docs/gpu-facts.txt`); the register map verified against Linux; no driver code |
 
 The order the documentation gives, and what each needs: [Port a device](https://github.com/oosexgang/hakios-xnu-kernel/blob/main/docs/porting/index.md).
+
+## GPU
+
+The GPU is a different generation from the reference phone's, so it is a second implementation of the
+same step framework rather than a set of changed constants. What is known and what is not, the
+register map with its sources, the licences, and the phased plan:
+[Adreno 730 compatibility report](docs/gpu-adreno-730.md). The facts the port starts from are
+`docs/gpu-facts.txt`, made from the phone's own tree by `tools/gpu-facts.py` and checked in CI.

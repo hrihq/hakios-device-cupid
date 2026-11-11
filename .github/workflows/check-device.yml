@@ -1,0 +1,51 @@
+name: check-device-cupid
+
+# The device repository's own checks, on every push and pull request:
+#   1. the GPU facts still match the phone's device tree (tools/gpu-facts.py --check)
+#   2. the device repository holds together in the common repository's tooling
+#      (tools/hakios-device.py check cupid, tools/drivers-check.py)
+#
+# Neither needs a phone. Both are source checks; neither says anything about booting.
+
+on:
+  push:
+    branches: [main, adreno-730-cupid]
+    paths: ["**", "!uefi/**", "!.github/workflows/build-uefi.yml"]
+  pull_request:
+    paths: ["**", "!uefi/**", "!.github/workflows/build-uefi.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout the device repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+
+      - name: Check the GPU facts against the device tree
+        run: |
+          set -euo pipefail
+          python3 tools/gpu-facts.py \
+            --dtb uefi/files/Resources/DTBs/cupid.dtb \
+            --check docs/gpu-facts.txt
+
+      - name: Checkout the common repository
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/oosexgang/hakios-xnu-kernel.git common
+          # the device repository is devices/<name> of the common tree; a link keeps a single copy
+          rm -rf common/devices/cupid
+          ln -s "$GITHUB_WORKSPACE" common/devices/cupid
+          ls -l common/devices/cupid
+
+      - name: Check the device repository holds together
+        run: |
+          set -euo pipefail
+          cd common
+          python3 tools/hakios-device.py check cupid
+          python3 tools/drivers-check.py
+          echo "::notice ::The device repository is consistent. This says nothing about booting on a phone."
