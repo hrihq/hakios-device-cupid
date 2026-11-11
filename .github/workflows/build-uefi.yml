@@ -156,16 +156,29 @@ jobs:
             "$VENV/bin/pip" install --upgrade pip
             # Mu-Silicium's own requirements file, pinned by the BASE commit above.
             "$VENV/bin/pip" install -r Mu-Silicium/pip-requirements.txt
-            # mu_nasm comes through NuGet and wants Mono; point it at the system nasm instead.
-            D=Mu-Silicium/Mu_Basecore/BaseTools/Bin/mu_nasm_extdep
-            mkdir -p "$D/Linux-x86_64"
-            echo 'version: 20016.1.1' > "$D/extdep_state.yaml"
-            ln -sf /usr/bin/nasm "$D/Linux-x86_64/nasm"
-            ln -sf /usr/bin/ndisasm "$D/Linux-x86_64/ndisasm"
           fi
+          # mu_nasm comes through NuGet and wants Mono; point it at the system nasm instead.
+          # Done here even on a cache hit: the extdep lives in the Mu_Basecore submodule, which
+          # the cache does not hold. The host directory name is OS-ARCH-BIT with dashes
+          # (edk2-pytool-extensions' acceptable_names); the underscore spelling is kept too
+          # because older versions of the tool looked for it.
+          D=Mu-Silicium/Mu_Basecore/BaseTools/Bin/mu_nasm_extdep
+          mkdir -p "$D/Linux-x86-64" "$D/Linux-x86_64"
+          echo 'version: 20016.1.1' > "$D/extdep_state.yaml"
+          for h in Linux-x86-64 Linux-x86_64; do
+            ln -sf /usr/bin/nasm "$D/$h/nasm"
+            ln -sf /usr/bin/ndisasm "$D/$h/ndisasm"
+          done
           # The distributions are edk2-pytool-library and edk2-pytool-extensions; the modules are
           # edk2toollib and edk2toolext.
           "$VENV/bin/python" -c 'import edk2toollib, edk2toolext; print("edk2 python tools: ok")'
+          "$VENV/bin/python" -c '
+          import os, sys
+          d = sys.argv[1]
+          assert os.path.isdir(os.path.join(d, "Linux-x86-64")), "mu_nasm host directory missing"
+          assert os.path.isfile(os.path.join(d, "extdep_state.yaml")), "mu_nasm state file missing"
+          print("mu_nasm extdep: ok")
+          ' "$D"
 
       - name: Vendor UEFI drivers
         id: vendor
@@ -207,8 +220,10 @@ jobs:
             done
             rm -rf "$tmp"
             echo "present=true" >> "$GITHUB_OUTPUT"
-          elif [ -n "$(find "$VENDOR_DIR" -type f -print -quit 2>/dev/null)" ]; then
-            echo "Vendor UEFI drivers found in the tree"
+          elif [ -n "$(find "$VENDOR_DIR" -type f -name '*.inf' -print -quit 2>/dev/null)" ]; then
+            # The vendor's drivers are .inf + .efi; Binaries/cupid/README.md is tracked here and
+            # is not a driver, so look for the .inf files and not for any file.
+            echo "Vendor UEFI drivers found in the tree: $(find "$VENDOR_DIR" -type f -name '*.inf' | wc -l) .inf files"
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"

@@ -85,7 +85,7 @@ def u32(value, index=0):
 def check_platform(device, mu):
     print("\nplatform")
     pkg = os.path.join(mu, "Platforms", "Xiaomi", "cupidPkg")
-    for rel in ("cupid.dsc", "cupid.fdf", "DeviceBuild.py",
+    for rel in ("cupid.dsc", "cupid.fdf", "cupid.dec", "DeviceBuild.py",
                 "Include/APRIORI.inc", "Include/DXE.inc", "Include/RAW.inc",
                 "Library/MemoryMapLib/MemoryMapLib.c", "Library/MemoryMapLib/MemoryMapLib.inf",
                 "Library/ConfigurationMapLib/ConfigurationMapLib.c",
