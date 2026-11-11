@@ -1,0 +1,49 @@
+{
+  "device": "cupid",
+  "soc": "sm8450",
+  "title": "Xiaomi 12",
+  "description": "The Xiaomi 12 (cupid) Adreno 730's firmware, what each image is for, and what the checker can and cannot verify. The sizes are from the public community mirror sm8450-mainline/firmware-xiaomi-cupid; the phone's own files may differ, so the checker accepts a range rather than an exact size. Nothing here is a claim that any of this works on a phone: it has never been loaded.",
+  "source": "https://github.com/sm8450-mainline/firmware-xiaomi-cupid",
+  "files": [
+    {
+      "name": "gmu_gen70000.bin",
+      "role": "the GMU's firmware",
+      "load": "the GMU's ITCM (0x00000000), DTCM (0x10004000) and its buffer memory",
+      "size_bytes": 57272,
+      "size_min": 4096,
+      "size_max": 131072,
+      "format": "block table: a run of {u32 addr, u32 size, u32 type, u32 value} entries. Entries with size == 0 are descriptors carrying a length in value; entries with type == 0xefbeadde carry data. The table must consume the file exactly.",
+      "format_source": "Linux drivers/gpu/drm/msm/adreno/a6xx_gmu.c: struct block_header and a6xx_gmu_fw_load()",
+      "status": "structure verified against the public mirror; where each block is accepted is not fully verified"
+    },
+    {
+      "name": "a730_sqe.fw",
+      "role": "the 3D core's microcode (the SQE image)",
+      "load": "the core's instruction ring",
+      "size_bytes": 74484,
+      "size_min": 4096,
+      "size_max": 262144,
+      "format": "unverified. No public source documents it. It is word-aligned (the size is a multiple of 4) and contains the word 0xfbadc0de at offset 0x38 and an ASCII-looking tail, but nothing here should be read as a header.",
+      "format_source": "none",
+      "status": "unverified"
+    },
+    {
+      "name": "a730_zap.mbn",
+      "role": "the zap shader, authenticated by TrustZone",
+      "load": "0x08b91a000, the reserved-memory node gpu_micro_code_region, size 0x2000",
+      "size_bytes": 11308,
+      "size_min": 2048,
+      "size_max": 65536,
+      "format": "a Qualcomm MDT: a 32-bit little-endian ELF whose program headers describe the segments. The zap shader path needs the magic, e_phentsize == 32, and the loadable segments' span to fit the reserved region.",
+      "format_source": "Linux drivers/soc/qcom/mdt_loader.c: mdt_header_valid(), mdt_phdr_loadable(), qcom_mdt_get_size(); drivers/gpu/drm/msm/adreno/adreno_gpu.c: zap_shader_load_mdt()",
+      "status": "verified: ELF32, 3 program headers, one PT_LOAD at paddr 0x1000, span 0x18bc, which fits the 0x2000 region"
+    }
+  ],
+  "unverified": [
+    "whether the phone's own files are byte-identical to the public mirror",
+    "whether the GMU blob's 56 KB block at address 0x4000 is accepted: Linux's a6xx_gmu_fw_load() only covers ITCM 0x0..0x4000 and DTCM 0x10004000..0x10008000, plus the GMU's buffer objects, whose layout is not public",
+    "the SQE image's format, which no public source documents",
+    "whether TrustZone will accept the zap shader for this kernel",
+    "whether the GMU will start, and whether the 3D core will leave secure mode"
+  ]
+}

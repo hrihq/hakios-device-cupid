@@ -125,3 +125,6 @@ The address layer -- every block, size, interrupt, clock, regulator, power level
 plus the register offsets -- is `gpu/a730_resources.json`, which generates
 `gpu/hakios.adreno-a730.h` and is checked against the tree and Linux's register dumps:
 [address layer](docs/gpu-address-layer.md). It is data, not a driver; `drivers/gpu/` is untouched.
+The firmware those facts point at -- `gmu_gen70000.bin`, `a730_sqe.fw`, `a730_zap.mbn` -- is
+described and checked by `gpu/firmware/manifest.json` and `tools/gpu-firmware-check.py`:
+[firmware dependencies](docs/gpu-firmware.md).

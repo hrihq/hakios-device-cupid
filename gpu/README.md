@@ -11,6 +11,8 @@ Adreno 642L support -- is untouched.
 | `../tools/gpu-address-check.py` | checks the configuration against the phone's device tree and Linux's register dumps, and generates the header |
 | `../tools/gpu-address-tests.py` | ten tests for the invariants: the header cannot drift, the corrected offsets cannot regress, an unverified register cannot become operational, an uncertain address cannot be selected, a container is not a register range |
 | `../docs/gpu-blockers.json` | generated blocker report: what stops the port moving on, and what would resolve it |
+| `firmware/manifest.json` | the three firmware images: what each is for, where it loads, and what format a public source describes |
+| `../tools/gpu-firmware-check.py` | checks a directory of firmware images against that manifest: presence, size, and the structure a public source documents |
 
 Read [../docs/gpu-address-layer.md](../docs/gpu-address-layer.md) for what is known, what is uncertain,
 and what Phase 2 deliberately leaves alone.
