@@ -20,19 +20,23 @@ std::vector<std::string> g_tests;
 void check(bool condition, const std::string& what) {
     if (!condition) {
         ++g_failures;
-        std::printf("    FAIL %s\n", what.c_str());
+        std::fprintf(stderr, "    FAIL %s\n", what.c_str());
+        std::fflush(stderr);
     }
 }
 
 void test(const std::string& name, std::function<void()> body) {
     g_tests.push_back(name);
+    std::fprintf(stderr, "-> %s\n", name.c_str());
+    std::fflush(stderr);
     const int before = g_failures;
     body();
     if (g_failures == before) {
-        std::printf("ok   %s\n", name.c_str());
+        std::fprintf(stderr, "ok   %s\n", name.c_str());
     } else {
-        std::printf("FAIL %s\n", name.c_str());
+        std::fprintf(stderr, "FAIL %s\n", name.c_str());
     }
+    std::fflush(stderr);
 }
 
 Capabilities mock_capabilities() {
@@ -282,6 +286,7 @@ int main() {
         (void)0;
     });
 
-    std::printf("hakimetal-tests: %zu test(s), %d failure(s)\n", g_tests.size(), g_failures);
+    std::fprintf(stderr, "hakimetal-tests: %zu test(s), %d failure(s)\n", g_tests.size(), g_failures);
+    std::fflush(stderr);
     return g_failures == 0 ? 0 : 1;
 }
