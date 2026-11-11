@@ -12,6 +12,7 @@
 #include "hakimetal/render_pipeline.h"
 #include "hakimetal/texture.h"
 
+#include <array>
 #include <memory>
 
 namespace hakimetal {
@@ -27,7 +28,9 @@ struct RenderPassAttachmentDescriptor {
 };
 
 struct RenderPassDescriptor {
-    RenderPassAttachmentDescriptor color_attachments[8] = {};
+    // std::array rather than a C array: GCC 13 hits an internal compiler error gimplifying a C array
+    // of aggregates whose members carry default initializers, which is what this used to be.
+    std::array<RenderPassAttachmentDescriptor, 8> color_attachments = {};
     uint32_t color_attachment_count = 0;
     RenderPassAttachmentDescriptor depth_attachment = {};
     RenderPassAttachmentDescriptor stencil_attachment = {};

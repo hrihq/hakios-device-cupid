@@ -11,6 +11,7 @@
 // mode and HazardTrackingMode. They are carried here because an application thinks in them; whether a
 // backend can honour them is a capability, not an assumption. See docs/metal-to-vulkan.md.
 
+#include <array>
 #include <cstdint>
 #include <utility>
 
@@ -218,7 +219,7 @@ struct RenderPipelineDescriptor {
     const char* vertex_function_source = nullptr;
     const char* fragment_function_source = nullptr;
     bool shader_source_is_spir_v = false;
-    RenderPipelineColorAttachmentDescriptor color_attachments[8] = {};
+    std::array<RenderPipelineColorAttachmentDescriptor, 8> color_attachments = {};
     uint32_t color_attachment_count = 1;
     TextureFormat depth_attachment_format = TextureFormat::Invalid;
     TextureFormat stencil_attachment_format = TextureFormat::Invalid;
