@@ -189,6 +189,7 @@ public:
     explicit MockDevice(Capabilities capabilities) : capabilities_(capabilities) {}
 
     const Capabilities& capabilities() const override { return capabilities_; }
+    std::vector<const char*> supported_extensions() const override { return {"HKIMOCK_DEVICE_A"}; }
 
     Result<std::shared_ptr<IBackendCommandQueue>>
         create_command_queue(const CommandQueueDescriptor&) override {

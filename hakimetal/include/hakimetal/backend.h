@@ -25,6 +25,15 @@ struct IBackendResource {
     virtual ~IBackendResource() = default;
 };
 
+class IBackendBuffer;
+class IBackendTexture;
+class IBackendCommandQueue;
+class IBackendCommandBuffer;
+class IBackendRenderPipeline;
+class IBackendFence;
+class IBackendEvent;
+class IBackendDevice;
+
 class IBackendBuffer : public IBackendResource {
 public:
     virtual uint64_t length() const = 0;
@@ -91,6 +100,7 @@ public:
 class IBackendDevice : public IBackendResource {
 public:
     virtual const Capabilities& capabilities() const = 0;
+    virtual std::vector<const char*> supported_extensions() const = 0;
     virtual Result<std::shared_ptr<IBackendCommandQueue>>
         create_command_queue(const CommandQueueDescriptor& descriptor) = 0;
     virtual Result<std::shared_ptr<IBackendBuffer>>

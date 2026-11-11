@@ -8,6 +8,7 @@ namespace {
 class NullBackendDevice final : public IBackendDevice {
 public:
     const Capabilities& capabilities() const override { return capabilities_; }
+    std::vector<const char*> supported_extensions() const override { return {}; }
     Result<std::shared_ptr<IBackendCommandQueue>>
         create_command_queue(const CommandQueueDescriptor&) override {
         return Result<std::shared_ptr<IBackendCommandQueue>>(Status::Unsupported);

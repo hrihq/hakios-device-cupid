@@ -12,6 +12,7 @@
 // backend can honour them is a capability, not an assumption. See docs/metal-to-vulkan.md.
 
 #include <cstdint>
+#include <utility>
 
 namespace hakimetal {
 
