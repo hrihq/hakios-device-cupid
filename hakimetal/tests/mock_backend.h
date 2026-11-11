@@ -179,8 +179,6 @@ public:
     }
 
     std::vector<std::string> calls;
-
-private:
     std::shared_ptr<MockCommandBuffer> buffer_;
 };
 

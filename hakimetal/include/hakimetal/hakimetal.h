@@ -11,6 +11,7 @@
 // rather than pretending. Nothing in this project writes GPU registers.
 
 #include "hakimetal/backend.h"
+#include "hakimetal/backends.h"
 #include "hakimetal/buffer.h"
 #include "hakimetal/command_buffer.h"
 #include "hakimetal/command_queue.h"
