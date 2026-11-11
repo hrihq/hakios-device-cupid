@@ -140,9 +140,28 @@ the kernel patches do not yet use.
 ### What this report verified independently
 
 The register table's 54 offsets were checked against mainline Linux's own A7XX register dumps
-(`drivers/gpu/drm/msm/registers/adreno/a6xx.xml`, `adreno_common.xml`, `a6xx_gmu.xml`):
-**54 of 54 match**, register for register. That is a real check, and it is the reason the A730 register
-map can be treated as known.
+(`drivers/gpu/drm/msm/registers/adreno/a6xx.xml`, `adreno_common.xml`, `a6xx_gmu.xml`), with the
+dump entry chosen by its `variants` attribute so an A8XX-only offset is not compared against an
+A6XX-A7XX one. **49 of 54 match, 1 has no public source, and 4 disagree.**
+
+The four disagreements are all in the RBBM secure-video block, where the generated table is one hex
+digit larger than Linux:
+
+| register | generated table | Linux `a6xx.xml` |
+|---|---|---|
+| `RBBM_SECVID_TRUST_CNTL` | `0x0f4000` | `0x0f400` |
+| `RBBM_SECVID_TSB_TRUSTED_BASE` | `0x0f8000` | `0x0f800` |
+| `RBBM_SECVID_TSB_TRUSTED_SIZE` | `0x0f8002` | `0x0f802` |
+| `RBBM_SECVID_TSB_CNTL` | `0x0f8003` | `0x0f803` |
+
+The GPU block is `0x40000` bytes, which is `0x10000` dwords. Only Linux's offsets fall inside it; the
+generated table's are outside the block entirely. **Linux is taken as correct**, and the port's
+configuration uses Linux's values. An earlier revision of this report said 54 of 54 matched; that was
+wrong, and the check that replaced it (`tools/gpu-address-check.py --linux`) is the one that found
+these four.
+
+`CP_PROTECT` (`0x0850`) is in the generated table but in none of the three dumps. It is carried as
+*unverified* and is not written by anything.
 
 The table's 53 hardware-clock-gating values and 46 protection writes come from `a6xx_catalog.c`'s
 `a730_hwcg`/`a730_protect`, which **do not exist in mainline Linux** -- the generator's pinned source is
@@ -261,22 +280,25 @@ This report claims none of the above. A build that succeeds, or a step that logs
 
 The 54 offsets below were read from the A7XX register dumps in mainline Linux
 (`drivers/gpu/drm/msm/registers/adreno/`); each is the dword offset inside the GPU block at 0x3d00000.
-They were cross-checked against the generated table in `NativeAdrenoA730HwInit.h` (MIT) and every one
-matched. Regesters marked **common** are in `adreno_common.xml`, **gmu** in `a6xx_gmu.xml`, the rest in
-`a6xx.xml`.
+They were cross-checked against the generated table in `NativeAdrenoA730HwInit.h` (MIT): 49 agree, 1 is
+in no public dump, and 4 disagree (see above). Registers marked **common** are in
+`adreno_common.xml`, **gmu** in `a6xx_gmu.xml`, the rest in `a6xx.xml`. This table is the machine-checked
+one; `gpu/a730_resources.json` holds the same values and `tools/gpu-address-check.py --linux` compares
+them against the dumps on every run.
 
 | Register | Offset | Source file |
 |---|---|---|
 | `CP_RB_BASE` | 0x0800 | a6xx.xml |
 | `CP_RB_CNTL` | 0x0802 | a6xx.xml |
 | `CP_RB_RPTR_ADDR` | 0x0804 | a6xx.xml |
+| `CP_BV_RB_RPTR_ADDR` | 0x0a98 | a6xx.xml |
 | `CP_RB_RPTR` | 0x0806 | a6xx.xml |
 | `CP_RB_WPTR` | 0x0807 | a6xx.xml |
 | `CP_SQE_CNTL` | 0x0808 | a6xx.xml |
-| `CP_SQE_INSTR_BASE` | 0x0830 | a6xx.xml |
+| `CP_SQE_INSTR_BASE` | 0x0830 | a6xx.xml, the A6XX-A7XX entry (the A8XX- one is 0x0816) |
 | `CP_AHB_CNTL` | 0x098d | a6xx.xml |
 | `CP_PROTECT_CNTL` | 0x084f | a6xx.xml |
-| `CP_PROTECT` | 0x0850 | a6xx.xml |
+| `CP_PROTECT` | 0x0850 | not in any of the three dumps -- unverified |
 | `CP_APRIV_CNTL` | 0x0844 | a6xx.xml |
 | `CP_BV_APRIV_CNTL` | 0x0ad0 | a6xx.xml |
 | `CP_LPAC_APRIV_CNTL` | 0x0b31 | a6xx.xml |

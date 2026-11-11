@@ -1,0 +1,1072 @@
+{
+  "device": "cupid",
+  "soc": "sm8450",
+  "title": "Xiaomi 12",
+  "tree": "uefi/files/Resources/DTBs/cupid.dtb",
+  "description": "The Xiaomi 12 (cupid) Adreno 730's resources. Every value carries the node it came from. 'verified' means the phone's own device tree says so; 'cross-checked' means a second source agrees; 'uncertain' means two sources disagree or none covers it.",
+  "blocks": [
+    {
+      "name": "gpu",
+      "phys": "0x03d00000",
+      "size": "0x00040000",
+      "kind": "gpu",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "reg": "kgsl_3d0_reg_memory",
+      "status": "verified"
+    },
+    {
+      "name": "gpu_cx_dbgc",
+      "phys": "0x03d61000",
+      "size": "0x00000800",
+      "kind": "gpu",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "reg": "cx_dbgc",
+      "status": "verified"
+    },
+    {
+      "name": "gpu_rscc",
+      "phys": "0x03d50000",
+      "size": "0x00010000",
+      "kind": "rscc",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "reg": "rscc",
+      "status": "verified"
+    },
+    {
+      "name": "gpu_isense",
+      "phys": "0x03d8b000",
+      "size": "0x00002000",
+      "kind": "gpu",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "reg": "isense_cntl",
+      "status": "verified"
+    },
+    {
+      "name": "gpu_cx_misc",
+      "phys": "0x03d9e000",
+      "size": "0x00001000",
+      "kind": "gpu",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "reg": "cx_misc",
+      "status": "verified"
+    },
+    {
+      "name": "gpu_qdss",
+      "phys": "0x10900000",
+      "size": "0x00080000",
+      "kind": "gpu",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "reg": "qdss_gfx",
+      "status": "verified"
+    },
+    {
+      "name": "gpu_rdpm",
+      "phys": "0x00634000",
+      "size": "0x00001000",
+      "kind": "gpu",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "reg": "rdpm_cx",
+      "status": "verified"
+    },
+    {
+      "name": "gmu",
+      "phys": "0x03d68000",
+      "size": "0x00037000",
+      "kind": "gmu",
+      "dt": "/soc/qcom,gmu@3d69000",
+      "reg": "gmu",
+      "status": "uncertain"
+    },
+    {
+      "name": "gmu_pdc",
+      "phys": "0x0b290000",
+      "size": "0x00010000",
+      "kind": "gmu",
+      "dt": "/soc/qcom,gmu@3d69000",
+      "reg": "gmu_pdc",
+      "status": "verified"
+    },
+    {
+      "name": "gmu_ao",
+      "phys": "0x03d40000",
+      "size": "0x00010000",
+      "kind": "gmu",
+      "dt": "/soc/qcom,gmu@3d69000",
+      "reg": "gmu_ao_blk_dec0",
+      "status": "verified"
+    },
+    {
+      "name": "gpucc",
+      "phys": "0x03d90000",
+      "size": "0x0000a000",
+      "kind": "gpucc",
+      "dt": "/soc/clock-controller@3d90000",
+      "reg": "cc_base",
+      "status": "verified"
+    },
+    {
+      "name": "smmu",
+      "phys": "0x03da0000",
+      "size": "0x00040000",
+      "kind": "smmu",
+      "dt": "/soc/kgsl-smmu@3da0000",
+      "reg": "base",
+      "status": "verified"
+    },
+    {
+      "name": "smmu_tcu",
+      "phys": "0x03de6000",
+      "size": "0x00000020",
+      "kind": "smmu",
+      "dt": "/soc/kgsl-smmu@3da0000",
+      "reg": "tcu-base",
+      "status": "verified"
+    },
+    {
+      "name": "tbu0",
+      "phys": "0x03de9000",
+      "size": "0x00001000",
+      "kind": "tbu",
+      "dt": "/soc/kgsl-smmu@3da0000/gfx_0_tbu@3de9000",
+      "reg": "",
+      "status": "verified"
+    },
+    {
+      "name": "tbu0_status",
+      "phys": "0x03de6200",
+      "size": "0x00000008",
+      "kind": "tbu",
+      "dt": "/soc/kgsl-smmu@3da0000/gfx_0_tbu@3de9000",
+      "reg": "status-reg",
+      "status": "verified"
+    },
+    {
+      "name": "tbu1",
+      "phys": "0x03ded000",
+      "size": "0x00001000",
+      "kind": "tbu",
+      "dt": "/soc/kgsl-smmu@3da0000/gfx_1_tbu@3ded000",
+      "reg": "",
+      "status": "verified"
+    },
+    {
+      "name": "tbu1_status",
+      "phys": "0x03de6208",
+      "size": "0x00000008",
+      "kind": "tbu",
+      "dt": "/soc/kgsl-smmu@3da0000/gfx_1_tbu@3ded000",
+      "reg": "status-reg",
+      "status": "verified"
+    },
+    {
+      "name": "iommu",
+      "phys": "0x03da0000",
+      "size": "0x00040000",
+      "kind": "smmu",
+      "dt": "/soc/qcom,kgsl-iommu@3da0000",
+      "reg": "",
+      "status": "verified"
+    },
+    {
+      "name": "gdsc_cx",
+      "phys": "0x03d99108",
+      "size": "0x00000004",
+      "kind": "control",
+      "dt": "/soc/qcom,gdsc@3d99108",
+      "reg": "",
+      "alias": "gpu_cc_cx_gdsc",
+      "status": "verified"
+    },
+    {
+      "name": "gdsc_gx",
+      "phys": "0x03d9905c",
+      "size": "0x00000004",
+      "kind": "control",
+      "dt": "/soc/qcom,gdsc@3d9905c",
+      "reg": "",
+      "alias": "gpu_cc_gx_gdsc",
+      "status": "verified"
+    },
+    {
+      "name": "cx_hw_ctrl",
+      "phys": "0x03d9953c",
+      "size": "0x00000004",
+      "kind": "control",
+      "dt": "/soc/syscon@3d9953c",
+      "reg": "",
+      "alias": "gpu_cc_cx_hw_ctrl",
+      "status": "verified"
+    },
+    {
+      "name": "gx_sw_reset",
+      "phys": "0x03d99058",
+      "size": "0x00000004",
+      "kind": "control",
+      "dt": "/soc/syscon@3d99058",
+      "reg": "",
+      "alias": "gpu_cc_gx_sw_reset",
+      "status": "verified"
+    },
+    {
+      "name": "gx_acd_reset",
+      "phys": "0x03d99358",
+      "size": "0x00000004",
+      "kind": "control",
+      "dt": "/soc/syscon@3d99358",
+      "reg": "",
+      "alias": "gpu_cc_gx_acd_reset",
+      "status": "verified"
+    },
+    {
+      "name": "gx_acd_iroot_reset",
+      "phys": "0x03d9958c",
+      "size": "0x00000004",
+      "kind": "control",
+      "dt": "/soc/syscon@3d9958c",
+      "reg": "",
+      "alias": "gpu_cc_gx_acd_iroot_reset",
+      "status": "verified"
+    },
+    {
+      "name": "gx_domain_addr",
+      "phys": "0x03d99504",
+      "size": "0x00000004",
+      "kind": "control",
+      "dt": "/soc/syscon@3d99504",
+      "reg": "",
+      "alias": "gpu_cc_gx_domain_addr",
+      "status": "verified"
+    },
+    {
+      "name": "gcc",
+      "phys": "0x00100000",
+      "size": "0x001f4200",
+      "kind": "clock",
+      "dt": "/soc/clock-controller@100000",
+      "reg": "cc_base",
+      "status": "verified"
+    },
+    {
+      "name": "qdss_stm",
+      "phys": "0x161c0000",
+      "size": "0x00040000",
+      "kind": "debug",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified",
+      "property": "qcom,gpu-qdss-stm"
+    },
+    {
+      "name": "gpu_zap_mem",
+      "phys": "0x08b91a000",
+      "size": "0x00002000",
+      "kind": "memory",
+      "dt": "/reserved-memory/gpu_micro_code_region@8b91a000",
+      "reg": "",
+      "status": "verified"
+    },
+    {
+      "name": "tsens0",
+      "phys": "0x00c263000",
+      "size": "0x000001ff",
+      "kind": "thermal",
+      "dt": "/soc/thermal-sensor@c263000",
+      "reg": "",
+      "status": "verified"
+    },
+    {
+      "name": "tsens1",
+      "phys": "0x00c265000",
+      "size": "0x000001ff",
+      "kind": "thermal",
+      "dt": "/soc/thermal-sensor@c265000",
+      "reg": "",
+      "status": "verified"
+    }
+  ],
+  "registers": [
+    {
+      "name": "CP_RB_BASE",
+      "offset": "0x000800",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_RB_CNTL",
+      "offset": "0x000802",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_RB_RPTR_ADDR",
+      "offset": "0x000804",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_BV_RB_RPTR_ADDR",
+      "offset": "0x000a98",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_RB_RPTR",
+      "offset": "0x000806",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_RB_WPTR",
+      "offset": "0x000807",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_SQE_CNTL",
+      "offset": "0x000808",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_SQE_INSTR_BASE",
+      "offset": "0x000830",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_AHB_CNTL",
+      "offset": "0x00098d",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_PROTECT_CNTL",
+      "offset": "0x00084f",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_PROTECT",
+      "offset": "0x000850",
+      "block": "gpu",
+      "source": "not in the Linux dump",
+      "status": "unverified-source"
+    },
+    {
+      "name": "CP_APRIV_CNTL",
+      "offset": "0x000844",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_BV_APRIV_CNTL",
+      "offset": "0x000ad0",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_LPAC_APRIV_CNTL",
+      "offset": "0x000b31",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_HW_FAULT",
+      "offset": "0x000821",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_INTERRUPT_STATUS",
+      "offset": "0x000823",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_SQE_STAT_ADDR",
+      "offset": "0x000908",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_SQE_STAT_DATA",
+      "offset": "0x000909",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_ALWAYS_ON_COUNTER",
+      "offset": "0x000980",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "CP_APERTURE_CNTL_HOST",
+      "offset": "0x000a00",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_STATUS",
+      "offset": "0x000210",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_STATUS3",
+      "offset": "0x000213",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_INT_0_STATUS",
+      "offset": "0x000201",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_INT_0_MASK",
+      "offset": "0x000038",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_INT_CLEAR_CMD",
+      "offset": "0x000037",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_CLOCK_CNTL",
+      "offset": "0x0000ae",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_PERFCTR_CNTL",
+      "offset": "0x000500",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_PERFCTR_GPU_BUSY_MASKED",
+      "offset": "0x00050b",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_INTERFACE_HANG_INT_CNTL",
+      "offset": "0x00001f",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_GBIF_HALT",
+      "offset": "0x000016",
+      "block": "gpu",
+      "source": "adreno_common.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_GBIF_CLIENT_QOS_CNTL",
+      "offset": "0x000011",
+      "block": "gpu",
+      "source": "adreno_common.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_NC_MODE_CNTL",
+      "offset": "0x000534",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RBBM_SECVID_TSB_TRUSTED_BASE",
+      "offset": "0x000f800",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified",
+      "note": "Linux a6xx.xml; the generated table says 0x0f8000"
+    },
+    {
+      "name": "RBBM_SECVID_TSB_TRUSTED_SIZE",
+      "offset": "0x000f802",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified",
+      "note": "Linux a6xx.xml; the generated table says 0x0f8002"
+    },
+    {
+      "name": "RBBM_SECVID_TSB_CNTL",
+      "offset": "0x000f803",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified",
+      "note": "Linux a6xx.xml; the generated table says 0x0f8003"
+    },
+    {
+      "name": "RBBM_SECVID_TRUST_CNTL",
+      "offset": "0x000f400",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified",
+      "note": "Linux a6xx.xml; the generated table says 0x0f4000"
+    },
+    {
+      "name": "UCHE_CACHE_WAYS",
+      "offset": "0x000e17",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "UCHE_CLIENT_PF",
+      "offset": "0x000e19",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "UCHE_GBIF_GX_CONFIG",
+      "offset": "0x000e3a",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "UCHE_CMDQ_CONFIG",
+      "offset": "0x000e3c",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "UCHE_TRAP_BASE",
+      "offset": "0x000e09",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "UCHE_WRITE_THRU_BASE",
+      "offset": "0x000e07",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "UCHE_GMEM_RANGE_MIN",
+      "offset": "0x000e0b",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "UCHE_GMEM_RANGE_MAX",
+      "offset": "0x000e0d",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "UCHE_MODE_CNTL",
+      "offset": "0x000e01",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "GBIF_HALT",
+      "offset": "0x003c45",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RB_NC_MODE_CNTL",
+      "offset": "0x008e08",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "SP_NC_MODE_CNTL",
+      "offset": "0x00ae02",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "TPL1_NC_MODE_CNTL",
+      "offset": "0x00b604",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "GRAS_NC_MODE_CNTL",
+      "offset": "0x008602",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "RB_CMP_DBG_ECO_CNTL",
+      "offset": "0x008e28",
+      "block": "gpu",
+      "source": "a6xx.xml",
+      "status": "verified"
+    },
+    {
+      "name": "GPU_GMU_AO_GMU_CGC_MODE_CNTL",
+      "offset": "0x023b09",
+      "block": "gpu",
+      "source": "a6xx_gmu.xml",
+      "status": "verified"
+    },
+    {
+      "name": "GPU_GMU_AO_GMU_CGC_DELAY_CNTL",
+      "offset": "0x023b0a",
+      "block": "gpu",
+      "source": "a6xx_gmu.xml",
+      "status": "verified"
+    },
+    {
+      "name": "GPU_GMU_AO_GMU_CGC_HYST_CNTL",
+      "offset": "0x023b0b",
+      "block": "gpu",
+      "source": "a6xx_gmu.xml",
+      "status": "verified"
+    }
+  ],
+  "streams": [
+    {
+      "name": "gfx3d_user",
+      "id": 0,
+      "dt": "/soc/qcom,kgsl-iommu@3da0000/gfx3d_user",
+      "status": "verified"
+    },
+    {
+      "name": "gfx3d_lpac",
+      "id": 1,
+      "dt": "/soc/qcom,kgsl-iommu@3da0000/gfx3d_lpac",
+      "status": "verified"
+    },
+    {
+      "name": "gfx3d_secure",
+      "id": 2,
+      "dt": "/soc/qcom,kgsl-iommu@3da0000/gfx3d_secure",
+      "status": "verified"
+    },
+    {
+      "name": "gmu",
+      "id": 5,
+      "dt": "/soc/qcom,gmu@3d69000",
+      "iommus": "311,5,1024",
+      "status": "verified"
+    }
+  ],
+  "interrupts": [
+    {
+      "name": "kgsl_3d0_irq",
+      "number": 300,
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "name": "freq_limiter_irq",
+      "number": 286,
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "name": "hfi",
+      "number": 304,
+      "dt": "/soc/qcom,gmu@3d69000",
+      "status": "verified"
+    },
+    {
+      "name": "gmu",
+      "number": 305,
+      "dt": "/soc/qcom,gmu@3d69000",
+      "status": "verified"
+    }
+  ],
+  "clocks": [
+    {
+      "name": "gcc_gpu_memnoc_gfx",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "name": "gcc_gpu_snoc_dvm_gfx",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "name": "gpu_cc_ahb",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "name": "apb_pclk",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "name": "gmu_clk",
+      "dt": "/soc/qcom,gmu@3d69000",
+      "status": "verified"
+    },
+    {
+      "name": "cxo_clk",
+      "dt": "/soc/qcom,gmu@3d69000",
+      "status": "verified"
+    },
+    {
+      "name": "axi_clk",
+      "dt": "/soc/qcom,gmu@3d69000",
+      "status": "verified"
+    },
+    {
+      "name": "memnoc_clk",
+      "dt": "/soc/qcom,gmu@3d69000",
+      "status": "verified"
+    },
+    {
+      "name": "ahb_clk",
+      "dt": "/soc/qcom,gmu@3d69000",
+      "status": "verified"
+    },
+    {
+      "name": "hub_clk",
+      "dt": "/soc/qcom,gmu@3d69000",
+      "status": "verified"
+    },
+    {
+      "name": "bi_tcxo",
+      "dt": "/soc/clock-controller@3d90000",
+      "status": "verified"
+    },
+    {
+      "name": "gpll0_out_main",
+      "dt": "/soc/clock-controller@3d90000",
+      "status": "verified"
+    },
+    {
+      "name": "gpll0_out_main_div",
+      "dt": "/soc/clock-controller@3d90000",
+      "status": "verified"
+    },
+    {
+      "name": "gpu_cc_cx_gmu",
+      "dt": "/soc/kgsl-smmu@3da0000",
+      "status": "verified"
+    },
+    {
+      "name": "gpu_cc_hub_cx_int",
+      "dt": "/soc/kgsl-smmu@3da0000",
+      "status": "verified"
+    },
+    {
+      "name": "gpu_cc_hlos1_vote_gpu_smmu",
+      "dt": "/soc/kgsl-smmu@3da0000",
+      "status": "verified"
+    }
+  ],
+  "regulators": [
+    {
+      "name": "vdd_cx",
+      "dt": "/soc/rsc@17a00000/rpmh-regulator-cxlvl/regulator-pm8350c-s6-level",
+      "for": "gpucc",
+      "status": "verified"
+    },
+    {
+      "name": "vdd_mx",
+      "dt": "/soc/rsc@17a00000/rpmh-regulator-mxlvl/regulator-pm8450-s6-level",
+      "for": "gpucc",
+      "status": "verified"
+    },
+    {
+      "name": "vdd_mxc",
+      "dt": "/soc/rsc@17a00000/rpmh-regulator-mxclvl/regulator-pm8350c-s2-level",
+      "for": "gpucc",
+      "status": "verified"
+    },
+    {
+      "name": "vddcx",
+      "dt": "/soc/qcom,gdsc@3d99108",
+      "for": "gmu",
+      "status": "verified"
+    },
+    {
+      "name": "vdd",
+      "dt": "/soc/qcom,gdsc@3d9905c",
+      "for": "gmu",
+      "status": "verified"
+    },
+    {
+      "name": "vdd",
+      "dt": "/soc/kgsl-smmu@3da0000",
+      "for": "smmu",
+      "status": "verified"
+    }
+  ],
+  "power_levels": [
+    {
+      "index": 0,
+      "freq_khz": 220000,
+      "bus": 0,
+      "acd": 0,
+      "status": "verified"
+    },
+    {
+      "index": 1,
+      "freq_khz": 285000,
+      "bus": 1,
+      "acd": 10,
+      "status": "verified"
+    },
+    {
+      "index": 2,
+      "freq_khz": 310000,
+      "bus": 2,
+      "acd": 20,
+      "status": "verified"
+    },
+    {
+      "index": 3,
+      "freq_khz": 360000,
+      "bus": 3,
+      "acd": 30,
+      "status": "verified"
+    },
+    {
+      "index": 4,
+      "freq_khz": 420000,
+      "bus": 4,
+      "acd": 40,
+      "status": "verified"
+    },
+    {
+      "index": 5,
+      "freq_khz": 450000,
+      "bus": 5,
+      "acd": 50,
+      "status": "verified"
+    },
+    {
+      "index": 6,
+      "freq_khz": 500000,
+      "bus": 6,
+      "acd": 60,
+      "status": "verified"
+    },
+    {
+      "index": 7,
+      "freq_khz": 550000,
+      "bus": 7,
+      "acd": 70,
+      "status": "verified"
+    },
+    {
+      "index": 8,
+      "freq_khz": 600000,
+      "bus": 8,
+      "acd": 80,
+      "status": "verified"
+    },
+    {
+      "index": 9,
+      "freq_khz": 680000,
+      "bus": 9,
+      "acd": 90,
+      "status": "verified"
+    },
+    {
+      "index": 10,
+      "freq_khz": 740000,
+      "bus": 10,
+      "acd": 100,
+      "status": "verified"
+    },
+    {
+      "index": 11,
+      "freq_khz": 818000,
+      "bus": 11,
+      "acd": 110,
+      "status": "verified"
+    }
+  ],
+  "mempools": [
+    {
+      "size": "0x1000",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "size": "0x2000",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "size": "0x10000",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "size": "0x20000",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "size": "0x40000",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    },
+    {
+      "size": "0x100000",
+      "dt": "/soc/qcom,kgsl-3d0@3d00000",
+      "status": "verified"
+    }
+  ],
+  "cross_checks": [
+    {
+      "what": "gpu base and size",
+      "this": "0x03d00000 0x00040000",
+      "sm8450.dtsi": "0x03d00000 0x00040000",
+      "verdict": "agree"
+    },
+    {
+      "what": "gpu cx_dbgc",
+      "this": "0x03d61000 0x00000800",
+      "sm8450.dtsi": "0x03d61000 0x00000800",
+      "verdict": "agree"
+    },
+    {
+      "what": "gpu cx memory",
+      "this": "0x03d9e000 0x00001000 (cx_misc)",
+      "sm8450.dtsi": "0x03d9e000 0x00001000 (cx_mem)",
+      "verdict": "agree"
+    },
+    {
+      "what": "rscc",
+      "this": "0x03d50000 0x00010000",
+      "sm8450.dtsi": "0x03d50000 0x00010000 (in the gmu node)",
+      "verdict": "agree"
+    },
+    {
+      "what": "gmu base and size",
+      "this": "0x03d68000 0x00037000",
+      "sm8450.dtsi": "0x03d6a000 0x00035000",
+      "verdict": "disagree"
+    },
+    {
+      "what": "gmu_pdc",
+      "this": "0x0b290000 0x00010000",
+      "sm8450.dtsi": "0x0b290000 0x00010000",
+      "verdict": "agree"
+    },
+    {
+      "what": "gpucc base and size",
+      "this": "0x03d90000 0x0000a000",
+      "sm8450.dtsi": "0x03d90000 0x0000a000",
+      "verdict": "agree"
+    },
+    {
+      "what": "smmu base and size",
+      "this": "0x03da0000 0x00040000",
+      "sm8450.dtsi": "0x03da0000 0x00040000",
+      "verdict": "agree"
+    },
+    {
+      "what": "smmu tcu-base",
+      "this": "0x03de6000 0x00000020",
+      "sm8450.dtsi": "not listed",
+      "verdict": "this tree only"
+    },
+    {
+      "what": "gmu interrupts",
+      "this": "hfi 304, gmu 305",
+      "sm8450.dtsi": "hfi 304, gmu 305",
+      "verdict": "agree"
+    },
+    {
+      "what": "gpu interrupt",
+      "this": "kgsl_3d0_irq 300, freq_limiter_irq 286",
+      "sm8450.dtsi": "kgsl_3d0_irq 300 only",
+      "verdict": "this tree has an extra"
+    }
+  ],
+  "uncertain": [
+    {
+      "what": "the GMU's base",
+      "this tree": "0x03d68000, size 0x00037000 (node /soc/qcom,gmu@3d69000, reg-name 'gmu')",
+      "Linux sm8450.dtsi": "0x03d6a000, size 0x00035000",
+      "note": "The phone's own tree wins for this phone. Both regions end at 0x03d9f000; the difference is the start, 0x2000. The node's unit address (0x3d69000) matches neither. HakiOS's SC7280 (redwood) driver uses 0x3d6a000. Which base the A730's GMU is reached at is only decidable on the phone."
+    },
+    {
+      "what": "the GMU's size",
+      "this tree": "0x00037000",
+      "Linux sm8450.dtsi": "0x00035000",
+      "note": "follows the base"
+    },
+    {
+      "what": "the GMU's region overlaps the GPUCC",
+      "this tree": "gmu 0x03d68000+0x37000 ends at 0x03d9f000; gpucc is 0x03d90000+0xa000",
+      "note": "Both the phone's tree and Linux's sm8450.dtsi have the GMU's region covering the GPUCC. The GMU's reg appears to be a coarse container, not its own register range. The port must not treat the whole region as GMU registers."
+    },
+    {
+      "what": "the A730's hardware clock gating and protection values",
+      "this tree": "not in the device tree",
+      "note": "53 hwcg and 46 protect values exist only in a generated table whose source is a private vendor checkout. They are not implemented and are not in this configuration."
+    },
+    {
+      "what": "the GPU speed bin and chip id",
+      "this tree": "no qcom,gpu-speed-bin, no qcom,chipid",
+      "note": "The A730's performance is chosen from its operating points, not from a speed bin. Nothing here to read."
+    }
+  ],
+  "disagreements": [
+    {
+      "what": "four RBBM secure-video offsets",
+      "generated table": "0x0f4000, 0x0f8000, 0x0f8002, 0x0f8003",
+      "Linux a6xx.xml": "0x0f400, 0x0f800, 0x0f802, 0x0f803",
+      "note": "The GPU block is 0x40000 bytes = 0x10000 dwords. Only Linux's offsets fall inside it; the generated table's are one hex digit larger and outside the block. Linux is taken as correct."
+    },
+    {
+      "what": "CP_SQE_INSTR_BASE and RB_CMP_DBG_ECO_CNTL",
+      "generated table": "0x0830 and 0x8e28",
+      "Linux a6xx.xml": "the same, from the entries whose variants are A6XX-A7XX (the dump also lists 0x0816 and 0x8f02 for A8XX-)",
+      "note": "Agree for the A730; they only differ if the wrong variant is read."
+    }
+  ]
+}

@@ -18,6 +18,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Linux's A7XX register dumps, pinned so the check is reproducible
+  LINUX_REV: 067c5c24cef23d913b67eaaf71ae67e7169a6620
+
 jobs:
   check:
     runs-on: ubuntu-24.04
@@ -32,6 +36,27 @@ jobs:
           python3 tools/gpu-facts.py \
             --dtb uefi/files/Resources/DTBs/cupid.dtb \
             --check docs/gpu-facts.txt
+
+      - name: Fetch Linux's A7XX register dumps at the pinned revision
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/linux-registers"
+          mkdir -p "$dir"
+          base="https://raw.githubusercontent.com/torvalds/linux/$LINUX_REV/drivers/gpu/drm/msm/registers/adreno"
+          for f in a6xx.xml a6xx_gmu.xml adreno_common.xml; do
+            curl -fsSL "$base/$f" -o "$dir/$f"
+            echo "$f $(wc -c < "$dir/$f") bytes"
+          done
+          echo "dir=$dir" >> "$GITHUB_ENV"
+
+      - name: Check the Adreno 730 address layer
+        run: |
+          set -euo pipefail
+          python3 tools/gpu-address-check.py \
+            --config gpu/a730_resources.json \
+            --dtb uefi/files/Resources/DTBs/cupid.dtb \
+            --linux "$dir" \
+            --check-header gpu/hakios.adreno-a730.h
 
       - name: Checkout the common repository
         run: |

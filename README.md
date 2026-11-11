@@ -121,3 +121,7 @@ same step framework rather than a set of changed constants. What is known and wh
 register map with its sources, the licences, and the phased plan:
 [Adreno 730 compatibility report](docs/gpu-adreno-730.md). The facts the port starts from are
 `docs/gpu-facts.txt`, made from the phone's own tree by `tools/gpu-facts.py` and checked in CI.
+The address layer -- every block, size, interrupt, clock, regulator, power level and stream,
+plus the register offsets -- is `gpu/a730_resources.json`, which generates
+`gpu/hakios.adreno-a730.h` and is checked against the tree and Linux's register dumps:
+[address layer](docs/gpu-address-layer.md). It is data, not a driver; `drivers/gpu/` is untouched.
