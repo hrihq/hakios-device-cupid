@@ -142,3 +142,44 @@ The two that are not:
 
 So of the 13 `soc_*` arguments the drivers read, the only one that would silently take the wrong
 value is the modem's PAS id.
+
+---
+
+## The addresses the drivers carry
+
+`tools/driver-addresses.py` reads every `#define` that looks like a physical address out of the
+common repository's drivers and looks each one up in this phone's device tree. 29 driver files, 155
+address constants, 37 found in the tree, 118 not.
+
+**An address the driver carries and the tree does not have is not proof of a bug** -- the driver may
+compute it, or the block may be outside the tree. But the ones below are the first phone's constants
+pointing at blocks this phone puts elsewhere, and each is a silent wrong register until it is fixed.
+
+| Driver | Constant | First phone | This phone |
+|---|---|---|---|
+| `hakios.adsp.c` | `ADSP_MEMORY` | `0x86700000` | `0x9fd00000` (`adsp_region`) |
+| `hakios.camera.c` | `CAMCC_PHYS` | `0x0ad00000` | `0x0ade0000` |
+| `hakios.camera.c` | `CSID_PHYS` | `0x0acc8000` | `0x0acb7000` |
+| `hakios.camera.c` | `IFE_PHYS` | `0x0acc4000` | `0x0ac62000` |
+| `hakios.camera.c` | `RSC_PHYS` | `0x18220000` | `0x17a20000` |
+| `hakios.cpufreq.c` | `EPSS_PHYS` | `0x18591000` | `0x17d91000` |
+| `hakios.goodix.c` | `RSC_PHYS` | `0x18220000` | `0x17a20000` |
+| `hakios.mpss.c` | `MPSS_MEMORY_DEFAULT` | `0x8b800000` | `0x8bc00000` (already in `soc.args`) |
+| `hakios.mpss.c` | `RMTFS_BUFFER_PA_DEFAULT` | `0x9c700000` | needs `modem_buffer=` |
+| `hakios.pmic.c` | `ARB_CNFG_PHYS`, `ARB_OBSERVER_PHYS` | `0x0c40a000`, `0x0e600000` | not in the tree |
+| `hakios.adreno.c` | `GPU_CHIP_ID` | `0x06030500` (Adreno 642L) | the Adreno 730 |
+| `hakios.wifi.c` | `WPSS_MEMORY` | `0x9ae00000` | the QCA6490's own |
+
+The ones that **match**, and so need nothing:
+
+| Driver | Constant | Value |
+|---|---|---|
+| `hakios.thermal.c` | `REFERENCE_TM0`, `REFERENCE_TM1` | `0xc263000`, `0xc265000` |
+| `hakios.ufshc.c` | `UFSHC_PHYS` | `0x01d84000` |
+| `hakios.pmic.c` | `ARB_CORE_PHYS` | `0x0c440000` (this phone's SPMI register 3) |
+| `hakios.speaker.c`, `hakios.goodix.c` | `GCC_PHYS` | `0x00100000` |
+| `hakios.mpss.c` | `IPA_IMEM_DEFAULT` | `0x14600000` |
+
+**What this corrects in the matrix above:** "reusable" there meant the driver talks to a
+SoC-family-generic block, not that it runs unchanged. Every driver carries the first phone's
+constants; the audit above is the check that says which of them this phone shares.
