@@ -35,6 +35,7 @@ run without a GPU and without Vulkan.
 | `docs/architecture.md` | the three layers, the capability contract, the error model |
 | `docs/metal-to-vulkan.md` | the Metal-to-Vulkan compatibility matrix |
 | `docs/limitations.md` | what HakiMetal does not do |
+| `docs/phase2-design.md` | the Phase 2 Vulkan backend: what it builds, the memory model, capability reporting, and the milestones that are blocked on Vulkan existing |
 
 ## Build and test
 
