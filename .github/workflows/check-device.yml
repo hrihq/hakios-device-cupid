@@ -82,6 +82,11 @@ jobs:
           python3 tools/uefi-binaries-check.py \
             --manifest uefi/firmware/vendor-binaries.json --self-test
 
+      - name: Check the device blocker report matches the generator
+        run: |
+          set -euo pipefail
+          python3 tools/device-blockers.py --check docs/device-blockers.json
+
       - name: Check the blocker report matches the configuration
         run: |
           set -euo pipefail

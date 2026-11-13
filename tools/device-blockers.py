@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""Write the machine-readable device blocker report.
+
+Where docs/device-facts.txt records what the phone's device tree says, this records what the port
+still cannot get from any source: the firmware images, the init sequences, the device identity and the
+tuning data that live in the phone's firmware partitions and the vendor kernel.
+
+The list is static because it is a statement about the project, not a fact to be re-derived. CI
+checks that the committed report matches the generator.
+
+Usage:
+  python3 tools/device-blockers.py --out docs/device-blockers.json
+  python3 tools/device-blockers.py --check docs/device-blockers.json
+"""
+
+import argparse
+import json
+import os
+import sys
+
+DEVICE = "cupid"
+SOC = "sm8450"
+TITLE = "Xiaomi 12"
+
+# Each blocker: what, which subsystem, why it blocks, and what would resolve it.
+BLOCKERS = [
+    {"id": "firmware-gpu", "subsystem": "gpu", "what": "the three GPU firmware images",
+     "detail": "gmu_gen70000.bin, a730_sqe.fw, a730_zap.mbn",
+     "blocks": "the GPU: GMU start, the 3D core's instruction stream, and secure mode",
+     "resolution": "pull them from the phone's own /vendor/firmware; checked by "
+                   "tools/gpu-firmware-check.py",
+     "status": "unresolved"},
+    {"id": "firmware-adsp", "subsystem": "audio", "what": "the ADSP firmware",
+     "detail": "the ADSP image and its voice and audio graphs",
+     "blocks": "audio playback and capture",
+     "resolution": "pull it from the phone's firmware partition",
+     "status": "unresolved"},
+    {"id": "firmware-cdsp", "subsystem": "compute", "what": "the CDSP firmware",
+     "detail": "the compute DSP image",
+     "blocks": "camera processing and compute offload",
+     "resolution": "pull it from the phone's firmware partition",
+     "status": "unresolved"},
+    {"id": "firmware-modem", "subsystem": "modem", "what": "the modem firmware",
+     "detail": "the modem image and its configuration",
+     "blocks": "cellular",
+     "resolution": "pull it from the phone's firmware partition",
+     "status": "unresolved"},
+    {"id": "firmware-slpi-spss", "subsystem": "sensors", "what": "the SLPI and SPSS firmware",
+     "detail": "the sensor and sensor-processor images",
+     "blocks": "always-on sensing",
+     "resolution": "pull them from the phone's firmware partition",
+     "status": "unresolved"},
+    {"id": "firmware-wlan", "subsystem": "wifi-bluetooth", "what": "the WLAN firmware and device blobs",
+     "detail": "the QCA6490 firmware, the regulatory database and the board data",
+     "blocks": "Wi-Fi and Bluetooth",
+     "resolution": "pull them from the phone's firmware partition",
+     "status": "unresolved"},
+    {"id": "firmware-isp", "subsystem": "camera", "what": "the ISP firmware",
+     "detail": "the camera ISP image",
+     "blocks": "camera",
+     "resolution": "pull it from the phone's firmware partition",
+     "status": "unresolved"},
+    {"id": "panel-init", "subsystem": "display", "what": "the panel's init commands and timing",
+     "detail": "the panel driver's init sequence, which the device tree does not carry",
+     "blocks": "a picture on the panel",
+     "resolution": "the vendor kernel's panel driver, or a panel datasheet",
+     "status": "unresolved"},
+    {"id": "touch-firmware", "subsystem": "touch", "what": "the touch controller's firmware and init",
+     "detail": "the Synaptics firmware and its configuration",
+     "blocks": "touch input",
+     "resolution": "the vendor kernel's touch driver",
+     "status": "unresolved"},
+    {"id": "camera-sensors", "subsystem": "camera", "what": "the camera sensors' identity and tuning",
+     "detail": "which sensors are fitted, and their init sequences and tuning data",
+     "blocks": "camera",
+     "resolution": "the vendor kernel's camera configuration",
+     "status": "unresolved"},
+    {"id": "amplifier-tuning", "subsystem": "audio", "what": "the speaker amplifier init and tuning",
+     "detail": "the WCD938x codec and WSA883x amplifier sequences",
+     "blocks": "sound from the speakers",
+     "resolution": "the vendor kernel's audio configuration",
+     "status": "unresolved"},
+    {"id": "ufs-identity", "subsystem": "storage", "what": "the UFS device's identity and geometry",
+     "detail": "the tree gives the host controller and PHY, not the device",
+     "blocks": "a reliable storage bring-up",
+     "resolution": "read it from the device once it is powered, or take it from the vendor kernel",
+     "status": "unresolved"},
+    {"id": "motion-sensors", "subsystem": "sensors", "what": "the motion sensors' identity",
+     "detail": "the accelerometer, gyroscope, magnetometer, proximity and pressure sensors are not "
+               "named in the device tree",
+     "blocks": "motion and proximity sensing",
+     "resolution": "the vendor board configuration",
+     "status": "unresolved"},
+    {"id": "battery-profile", "subsystem": "battery-power", "what": "the battery profile and charger tuning",
+     "detail": "the charger's firmware and the battery's fuel-gauge model",
+     "blocks": "charging and battery reporting",
+     "resolution": "the vendor kernel's battery configuration",
+     "status": "unresolved"},
+    {"id": "uefi-vendor-drivers", "subsystem": "uefi", "what": "the vendor UEFI DXE drivers",
+     "detail": "46 drivers the firmware volume needs, extracted from the phone's uefi.img",
+     "blocks": "the firmware volume link, and therefore UEFI, xnuloader and the kernel",
+     "resolution": "unpack the phone's uefi.img with tools/uefi-fv-unpack.py and place the drivers "
+                   "under Binaries/cupid; see docs/uefi-vendor-binaries.md",
+     "status": "unresolved"},
+    {"id": "no-physical-device", "subsystem": "all", "what": "a Xiaomi 12 (cupid) to run on",
+     "detail": "every register write, every sequence and every measurement in this port",
+     "blocks": "everything from the first boot onwards",
+     "resolution": "the user supplies a device and the firmware pulled from it",
+     "status": "unresolved"},
+]
+
+
+def build():
+    return {
+        "device": DEVICE,
+        "soc": SOC,
+        "title": TITLE,
+        "generated_by": "tools/device-blockers.py",
+        "description": "What the port still cannot get from any source. The device tree gives the "
+                       "blocks, clocks, interrupts, supplies and DMA channels; it does not give "
+                       "firmware, init sequences, device identity or tuning data. Those live in the "
+                       "phone's firmware partitions and the vendor kernel.",
+        "summary": {
+            "total": len(BLOCKERS),
+            "unresolved": sum(1 for b in BLOCKERS if b["status"] == "unresolved"),
+            "resolved": sum(1 for b in BLOCKERS if b["status"] == "resolved"),
+        },
+        "blockers": BLOCKERS,
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--out", default="docs/device-blockers.json")
+    parser.add_argument("--check")
+    args = parser.parse_args()
+
+    text = json.dumps(build(), indent=2, ensure_ascii=False) + "\n"
+    if args.check:
+        current = open(args.check, encoding="utf-8").read()
+        if current != text:
+            print("device-blockers: %s does not match the generator; regenerate it with --out" % args.check)
+            return 1
+        print("device-blockers: %s matches the generator" % args.check)
+        return 0
+    with open(args.out, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+    print("device-blockers: wrote %s (%d blocker(s), %d unresolved)"
+          % (args.out, len(BLOCKERS), sum(1 for b in BLOCKERS if b["status"] == "unresolved")))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
