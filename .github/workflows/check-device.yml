@@ -68,6 +68,13 @@ jobs:
           set -euo pipefail
           python3 tools/gpu-firmware-check.py --self-test
 
+      - name: Check the device facts against the device tree
+        run: |
+          set -euo pipefail
+          python3 tools/device-facts.py \
+            --dtb uefi/files/Resources/DTBs/cupid.dtb \
+            --check docs/device-facts.txt
+
       - name: Check the UEFI tooling against its own fixtures
         run: |
           set -euo pipefail
