@@ -74,6 +74,11 @@ jobs:
           python3 tools/uefi-build-check.py --self-test
           python3 tools/uefi-build-check.py | tail -n 1
 
+      - name: Check the modem's SoC addresses against the device tree
+        run: |
+          set -euo pipefail
+          python3 tools/soc-args-cupid.py             --dtb uefi/files/Resources/DTBs/cupid.dtb             --check soc.args
+
       - name: Check the device facts against the device tree
         run: |
           set -euo pipefail

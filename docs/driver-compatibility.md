@@ -100,3 +100,29 @@ the phone, and each has a step-by-step bring-up that cannot be validated without
 | CAMERA | the sensors' identity, their tables and the ISP firmware |
 
 Every one of those is in `docs/device-blockers.json`.
+
+---
+
+## The modem's SoC addresses
+
+The modem and IPA drivers carry the first phone's addresses as built-in defaults and take any that
+differ from `soc_*` boot-args, which `soc.args` holds. `tools/soc-args.py` in the common repository
+reads them off a phone's own device tree -- but it matches the reserved-memory nodes by the first
+phone's names, and this phone names three of them differently:
+
+| Argument | First phone's node | This phone's node | Value |
+|---|---|---|---|
+| `soc_cmd_db` | `cmd_db` | `aop_cmd_db_region` | `0x80860000` |
+| `soc_mpss_mem` | `mpss` | `mpss_region` | `0x8bc00000` |
+| `modem_ipa_fw_at` | `ipa_gsi` | `ipa_gsi_region` | `0x8b910000` |
+
+So the common tool alone leaves `soc.args` three values short, and two of the three differ from the
+built-in defaults (`soc_mpss_mem` and `modem_ipa_fw_at`) -- without them the modem driver would use
+the first phone's addresses. `tools/soc-args-cupid.py` reads the tree with this phone's node names
+and writes the complete file; CI re-checks it.
+
+**One value the tree does not carry:** `soc_pas_mpss`, the modem's PAS id. No node in this phone's
+device tree has a `qcom,pas-id` property -- not the modem, not any other. The driver's built-in value
+is the first phone's `4`; this phone's is not in the tree and has to come from the vendor kernel's
+modem configuration. Until then the modem driver will start the wrong processor, so this is a real
+gap and not a formality.
