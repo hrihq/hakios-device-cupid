@@ -52,6 +52,9 @@ of the GPU work, not a separate driver.
 * **Reusable** — the code talks to a Qualcomm block that is the same design on both SoCs (the SPMI
   arbiter, the TSENS core, the IPC router). It still needs the phone's addresses, which are not in
   the tree's compatible string but in its `reg` ranges, and it still needs the phone's firmware.
+  **"Reusable" does not mean unchanged:** every driver carries the first phone's addresses as
+  `#define`s, and the audit at the end of this document is the check that says which of them this
+  phone shares.
 * **Adaptable** — the shape of the driver is right but the blocks it names are different: a
   different clock list, a different PMIC, a different source for the battery's state.
 * **New** — the driver is written against a different chip. It cannot be adapted; it has to be
