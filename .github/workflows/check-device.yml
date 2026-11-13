@@ -74,6 +74,12 @@ jobs:
           python3 tools/uefi-build-check.py --self-test
           python3 tools/uefi-build-check.py | tail -n 1
 
+      - name: Audit the drivers' SoC arguments against what this device provides
+        run: |
+          set -euo pipefail
+          python3 tools/driver-args-check.py --self-test
+          python3 tools/driver-args-check.py | tail -n 1
+
       - name: Check the modem's SoC addresses against the device tree
         run: |
           set -euo pipefail
