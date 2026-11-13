@@ -1,0 +1,192 @@
+{
+  "board": "negroni",
+  "source": "akshaynexus/Mu-Silicum-negroni Platforms/OnePlus/negroniPkg (OnePlus 10 Pro, the same SM8450)",
+  "description": "The vendor DXE drivers a platform names. These binaries are proprietary and are not in any repository; they come from the phone's own uefi.img. The list is read out of the platform's own .inc/.fdf files, never copied from another board.",
+  "files": [
+    {
+      "path": "Binaries/negroni/MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe.inf",
+      "role": "disk IO"
+    },
+    {
+      "path": "Binaries/negroni/MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf",
+      "role": "partition tables"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/CPRDxe/CPRDxe.inf",
+      "role": "the display colour pipeline"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/ChipInfoDxe/ChipInfoDxe.inf",
+      "role": "the chip identification"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/ClockDxe/ClockDxe.inf",
+      "role": "clocks and PLLs"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/CmdDbDxe/CmdDbDxe.inf",
+      "role": "the bus command database"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/DALSYSDxe/DALSYSDxe.inf",
+      "role": "the device-access layer"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/DDRInfoDxe/DDRInfoDxe.inf",
+      "role": "DDR information"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/DisplayDxe/DisplayDxe.inf",
+      "role": "the display driver"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/EnvDxe/EnvDxe.inf",
+      "role": "the UEFI environment"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/GLinkDxe/GLinkDxe.inf",
+      "role": "the GLINK inter-processor link"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/GpiDxe/GpiDxe.inf",
+      "role": "the GPI DMA engine"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/HALIOMMUDxe/HALIOMMUDxe.inf",
+      "role": "the IOMMU HAL"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/HWIODxe/HWIODxe.inf",
+      "role": "the hardware IO layer"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/I2CDxe/I2CDxe.inf",
+      "role": "I2C controllers"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/ICBDxe/ICBDxe.inf",
+      "role": "interconnect bus"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/IPCCDxe/IPCCDxe.inf",
+      "role": "inter-processor communication"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/NpaDxe/NpaDxe.inf",
+      "role": "the NPA resource graph"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/PILDxe/PILDxe.inf",
+      "role": "the peripheral image loader"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/PILProxyDxe/PILProxyDxe.inf",
+      "role": "the PIL proxy"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/PlatformInfoDxe/PlatformInfoDxe.inf",
+      "role": "platform information"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/PwrUtilsDxe/PwrUtilsDxe.inf",
+      "role": "power helpers"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/RNGDxe/RngDxe.inf",
+      "role": "role not recorded"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/RpmhDxe/RpmhDxe.inf",
+      "role": "RPMh power resources"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/SPIDxe/SPIDxe.inf",
+      "role": "SPI controllers"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/SPMIDxe/SPMIDxe.inf",
+      "role": "the SPMI bus (PMIC, haptics, regulators)"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/SPSSDxe/SPSSDxe.inf",
+      "role": "SPSS"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/SdccDxe/SdccDxe.inf",
+      "role": "SD card (present on some boards)"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/ShmBridgeDxe/ShmBridgeDxeLA.inf",
+      "role": "role not recorded"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/SmemDxe/SmemDxe.inf",
+      "role": "shared-memory transport"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/TLMMDxe/TLMMDxe.inf",
+      "role": "the GPIO/pin-mux controller"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/TsensDxe/TsensDxe.inf",
+      "role": "the thermal sensors"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/TzDxe/ScmDxeLA.inf",
+      "role": "the secure-channel manager (TrustZone calls)"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/TzDxe/TzDxeLA.inf",
+      "role": "TrustZone"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/UCDxe/UCDxe.inf",
+      "role": "the USB composite driver"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/UFSDxe/UFSDxe.inf",
+      "role": "UFS storage"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/ULogDxe/ULogDxe.inf",
+      "role": "the micro-logger"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/UsbConfigDxe/UsbConfigDxe.inf",
+      "role": "USB configuration"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/UsbDeviceDxe/UsbDeviceDxe.inf",
+      "role": "USB device support"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/UsbInitDxe/UsbInitDxe.inf",
+      "role": "USB initialisation"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/UsbMsdDxe/UsbMsdDxe.inf",
+      "role": "USB mass storage"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/UsbPwrCtrlDxe/UsbPwrCtrlDxe.inf",
+      "role": "USB power control"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/UsbfnDwc3Dxe/UsbfnDwc3Dxe.inf",
+      "role": "the USB device controller"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/VcsDxe/VcsDxe.inf",
+      "role": "voltage scaling"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/XhciDxe/XhciDxe.inf",
+      "role": "USB 3 xHCI"
+    },
+    {
+      "path": "Binaries/negroni/QcomPkg/Drivers/XhciPciEmulationDxe/XhciPciEmulationDxe.inf",
+      "role": "PCI emulation for xHCI"
+    }
+  ],
+  "note": "This is the REFERENCE list: it is read out of the negroni platform's own .inc/.fdf files (OnePlus 10 Pro, the same SM8450). The cupid platform does not name these yet, and copying them in without the phone's own binaries would be a guess. Derive cupid's list with: tools/uefi-binaries-check.py --reference <cupid platform dir> --board cupid"
+}

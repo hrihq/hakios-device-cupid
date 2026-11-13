@@ -68,6 +68,13 @@ jobs:
           set -euo pipefail
           python3 tools/gpu-firmware-check.py --self-test
 
+      - name: Check the UEFI tooling against its own fixtures
+        run: |
+          set -euo pipefail
+          python3 tools/uefi-fv-unpack.py --self-test
+          python3 tools/uefi-binaries-check.py \
+            --manifest uefi/firmware/vendor-binaries.json --self-test
+
       - name: Check the blocker report matches the configuration
         run: |
           set -euo pipefail
