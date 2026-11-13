@@ -55,7 +55,8 @@ SUBSYSTEMS = [
         ("/reserved-memory/non_secure_display_region", "the display reserved region"),
     ]),
     ("touch", "the touchscreen, the fingerprint sensor", [
-        ("/soc/ssusb@a600000/synaptics_tcm@20", "the Synaptics touch controller"),
+        ("/soc/spi@990000/fts@0", "the STM FTS touch controller"),
+        ("/soc/ssusb@a600000/synaptics_tcm@20", "the Synaptics TCM on I2C"),
         ("/soc/xiaomi_touch", "the Xiaomi touch wrapper"),
         ("/soc/fingerprint_goodix", "the Goodix fingerprint sensor"),
     ]),

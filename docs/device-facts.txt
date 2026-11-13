@@ -90,7 +90,14 @@ display -- the SDE display pipeline and the panel
 ==============================================================================
 touch -- the touchscreen, the fingerprint sensor
 ==============================================================================
-  the Synaptics touch controller
+  the STM FTS touch controller
+  node         /soc/spi@990000/fts@0
+    compatible   st,spi
+    reg[0]       0x000000000 0x00000000 
+    vdd-supply   /soc/rsc@17a00000/rpmh-regulator-ldoc2/regulator-pm8350c-l2
+    avdd-supply  /soc/rsc@17a00000/rpmh-regulator-ldoc7/regulator-pm8350c-l7
+    status       ok
+  the Synaptics TCM on I2C
   node         /soc/ssusb@a600000/synaptics_tcm@20
     compatible   synaptics,tcm-i2c
     vdd-supply   /soc/rsc@17a00000/rpmh-regulator-ldoc8/regulator-pm8350c-l8
