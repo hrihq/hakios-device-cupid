@@ -101,6 +101,11 @@ jobs:
           ln -s "$GITHUB_WORKSPACE" common/devices/cupid
           ls -l common/devices/cupid
 
+      - name: Check the driver compatibility matrix against the drivers
+        run: |
+          set -euo pipefail
+          python3 tools/driver-matrix-check.py             --common common             --matrix docs/driver-compatibility.md
+
       - name: Check the device repository holds together
         run: |
           set -euo pipefail

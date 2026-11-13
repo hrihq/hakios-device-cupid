@@ -1,0 +1,102 @@
+# Driver compatibility: HakiOS's drivers against the Xiaomi 12 (cupid)
+
+**Status: a comparison of what HakiOS's drivers are written for, against what the Xiaomi 12's device
+tree says is in the phone. No driver has been ported and none has been run.**
+
+HakiOS's drivers are written for the **POCO X5 Pro (redwood)**, a Snapdragon 778G (SM7325, SC7280
+family): the Adreno 642L, the WCN6750 Wi-Fi/Bluetooth, a Goodix GT9916 or FocalTech FT3680
+touchscreen on SPI, two I2C speaker amplifiers, an Awinic AW86927 haptic motor, and the PM8350C flash
+LED. Every driver's `conf` in `drivers/` names its hardware; the table below reads those names and
+compares them with `docs/device-facts.txt`.
+
+`tools/driver-matrix-check.py` checks that every driver named here still exists in the common
+repository, so the matrix cannot drift from the drivers it describes.
+
+---
+
+## The matrix
+
+| Driver | Written for (POCO X5 Pro) | cupid (SM8450) | Verdict |
+|---|---|---|---|
+| **SOCINFO** | any Qualcomm SoC keeping SMEM item 137 | SM8450 | **reusable** — needs `soc_smem=` from cupid's FD |
+| **PMIC** | the SPMI arbiter and the PMIC blocks | SPMI 0/1, RPMh, AOSS | **reusable** — the arbiter is the same design |
+| **THERMAL** | the SoC's temperature sensors | two TSENS blocks, 32 sensors | **reusable** — the sensor core is the same |
+| **CPUFREQ** | the core clocks and the memory bus votes | GCC, the same RPMh | **adaptable** — the clock names differ |
+| **BATTGUARD** | the run handed back before the battery is flat | same | **reusable** |
+| **QMI** | the IPC router and the QMI messages | same | **reusable** |
+| **UFS** | the POCO X5 Pro's UFS flash | UFS 3.1, `ufshc@1d84000`, PHY `@1d87000` | **adaptable** — same host controller design, different device |
+| **ADSP** | the SC7325's audio DSP | the waipio ADSP | **adaptable** — the framework, not the firmware |
+| **SOUND** | the speakers playing | the LPASS + WCD938x | **adaptable** — needs ADSP and SPEAKER |
+| **MIC** | the microphones through the DSP | the LPASS | **adaptable** — needs ADSP and SOUND |
+| **SPEAKER** | two amplifiers on I2C | WSA883x on soundwire | **new** — a different bus and a different chip |
+| **BATTERY** | the state from the audio DSP's battery manager | the charger under `pmic_glink` | **adaptable** — the source of the state changes |
+| **BUTTONS** | the power and volume keys through the PMIC's SPMI | `/soc/gpio_keys` | **adaptable** — different keys, same idea |
+| **TORCH** | the PM8350C's flash LED | cupid's flash LED | **adaptable** — the PMIC is a different one |
+| **GOODIX** | GT9916 or FT3680 on SPI | a Synaptics TCM on I2C | **new** — a different controller, bus and protocol |
+| **HAPTIC** | an Awinic AW86927 | an Awinic AW8697 | **new** — the same vendor, a different chip |
+| **BT** | the WCN6750's Bluetooth half | the QCA6490 | **new** |
+| **WIFI** | the WCN6750, Linux's ath11k linked in | the QCA6490 | **new** — a different radio and a different stack |
+| **CAMERA** | the POCO X5 Pro's sensors and the ISP's interface | the SDE-class camera subsystem, CSI/IPE/BPS | **new** — the sensors, the tables and the ISP firmware |
+| **MODEM** | the POCO X5 Pro's modem, over QMI and UFS | the waipio modem | **adaptable framework** — the firmware and the file systems differ |
+| **ADRENO** | the Adreno 642L of the SC7280 | the Adreno 730 | **new** — phases 3 to 6; phases 1 and 2 are the facts and the address layer |
+| **VIRTIO_INPUT**, **VIRTIO_BLK**, **VIRTIO_NET**, **VIRTIO_SOUND** | QEMU's virtio devices | — | **out of scope** — they serve the QEMU port, not the phone |
+
+The display has no `drivers/` conf: in the GPU driver's IOKit the display asks whether the GPU is
+done with a surface, so the display is served from the GPU driver's service. Bringing it up is part
+of the GPU work, not a separate driver.
+
+---
+
+## What "reusable" means, and what it does not
+
+* **Reusable** — the code talks to a Qualcomm block that is the same design on both SoCs (the SPMI
+  arbiter, the TSENS core, the IPC router). It still needs the phone's addresses, which are not in
+  the tree's compatible string but in its `reg` ranges, and it still needs the phone's firmware.
+* **Adaptable** — the shape of the driver is right but the blocks it names are different: a
+  different clock list, a different PMIC, a different source for the battery's state.
+* **New** — the driver is written against a different chip. It cannot be adapted; it has to be
+  written, and its firmware comes from the phone.
+
+No verdict here is a claim that the driver works. Every one of them needs the phone: at minimum the
+addresses, and for most of them the firmware and the init sequences.
+
+---
+
+## The order the drivers come up in
+
+The dependency order is the same as the `requires` lines in the `conf` files, and it is why the
+bring-up is long:
+
+```
+SOCINFO, PMIC, THERMAL, BATTGUARD, CPUFREQ     -- the SoC, read only
+  └─ UFS                                     -- storage, then the root
+       └─ QMI                                 -- the IPC router
+            ├─ WIFI  (needs fw-wifi)
+            └─ MODEM (needs fw-modem)
+  └─ ADSP          (needs fw-audio)
+       └─ SPEAKER
+            └─ SOUND
+                 └─ MIC
+  └─ ADRENO        (needs fw-gpu; phases 3-6)
+       └─ the display, through the GPU's service
+  └─ GOODIX, BUTTONS, HAPTIC, TORCH, CAMERA, BT
+```
+
+The three longest poles are the GPU, Wi-Fi/Bluetooth, and audio: each needs its own firmware from
+the phone, and each has a step-by-step bring-up that cannot be validated without the hardware.
+
+---
+
+## What each "new" driver needs
+
+| Driver | Needs |
+|---|---|
+| ADRENO | the GMU and 3D core firmware; the zap shim; then the user client and the Metal service |
+| SPEAKER | the WSA883x amplifiers' init and tuning, and the soundwire bus |
+| GOODIX → a Synaptics TCM driver | the controller's firmware, its I2C address and its init sequence |
+| HAPTIC | the AW8697's register map and waveforms |
+| BT | the QCA6490's Bluetooth firmware and its host interface |
+| WIFI | the QCA6490's WLAN firmware, the regulatory database and the board data |
+| CAMERA | the sensors' identity, their tables and the ISP firmware |
+
+Every one of those is in `docs/device-blockers.json`.
