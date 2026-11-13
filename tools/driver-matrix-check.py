@@ -28,8 +28,13 @@ def read_matrix(path):
     # the matrix names a driver as **NAME** in the first column of a table row
     names = set()
     for line in text.splitlines():
-        match = re.match(r"\|\s*\*\*([A-Z0-9_]+)\*\*", line)
-        if match:
+        if not line.startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if not cells:
+            continue
+        # a row may name several drivers in its first cell: **A**, **B**
+        for match in re.finditer(r"\*\*([A-Z0-9_]+)\*\*", cells[0]):
             names.add(match.group(1))
     return names
 
