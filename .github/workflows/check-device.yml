@@ -74,22 +74,12 @@ jobs:
           python3 tools/uefi-build-check.py --self-test
           python3 tools/uefi-build-check.py | tail -n 1
 
-      - name: Audit the drivers' address constants against the device tree
-        run: |
-          set -euo pipefail
-          python3 tools/driver-addresses.py --self-test
-          python3 tools/driver-addresses.py | tail -n 1
-
-      - name: Audit the drivers' SoC arguments against what this device provides
-        run: |
-          set -euo pipefail
-          python3 tools/driver-args-check.py --self-test
-          python3 tools/driver-args-check.py | tail -n 1
-
       - name: Check the modem's SoC addresses against the device tree
         run: |
           set -euo pipefail
-          python3 tools/soc-args-cupid.py             --dtb uefi/files/Resources/DTBs/cupid.dtb             --check soc.args
+          python3 tools/soc-args-cupid.py \
+            --dtb uefi/files/Resources/DTBs/cupid.dtb \
+            --check soc.args
 
       - name: Check the device facts against the device tree
         run: |
@@ -127,7 +117,23 @@ jobs:
       - name: Check the driver compatibility matrix against the drivers
         run: |
           set -euo pipefail
-          python3 tools/driver-matrix-check.py             --common common             --matrix docs/driver-compatibility.md
+          python3 tools/driver-matrix-check.py \
+            --common common \
+            --matrix docs/driver-compatibility.md
+
+      - name: Audit the drivers' address constants against the device tree
+        run: |
+          set -euo pipefail
+          python3 tools/driver-addresses.py --self-test
+          python3 tools/driver-addresses.py \
+            --common common \
+            --dtb uefi/files/Resources/DTBs/cupid.dtb | tail -n 1
+
+      - name: Audit the drivers' SoC arguments against what this device provides
+        run: |
+          set -euo pipefail
+          python3 tools/driver-args-check.py --self-test
+          python3 tools/driver-args-check.py --common common | tail -n 1
 
       - name: Check the device repository holds together
         run: |
