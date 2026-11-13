@@ -68,6 +68,12 @@ jobs:
           set -euo pipefail
           python3 tools/gpu-firmware-check.py --self-test
 
+      - name: Check the UEFI platform's vendor-binary references
+        run: |
+          set -euo pipefail
+          python3 tools/uefi-build-check.py --self-test
+          python3 tools/uefi-build-check.py | tail -n 1
+
       - name: Check the device facts against the device tree
         run: |
           set -euo pipefail

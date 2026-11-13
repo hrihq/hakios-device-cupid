@@ -69,8 +69,9 @@ extracted, not written.
 
 ## What cannot be checked without the phone
 
-1. **Which of the 46 drivers cupid actually needs.** The negroni list is the same SoC, not the same
-   board. Cupid's own list must be derived from its own platform files once those name the drivers.
+1. **Whether the 51 drivers cupid's platform names are the ones cupid's own volume holds.** The list
+   is written (below); whether the phone's `uefi.img` provides exactly those, and no others, is what
+   the unpack has to answer.
 2. **Whether the extracted binaries are the right build.** The reference ports port patches from one
    vendor build onto another; cupid's `uefi.img` build is its own, and a driver from a different
    build may or may not work. Nothing here decides that.
@@ -78,13 +79,46 @@ extracted, not written.
    and no source can predict it.
 4. **Whether the drivers do what the platform expects at runtime.** That needs the phone.
 
+## The platform's own list
+
+`uefi/files/Platforms/Xiaomi/cupidPkg/Include/*.inc` names **51** vendor binaries, each as
+`Binaries/cupid/<path>/<Driver>.inf`. `tools/uefi-build-check.py` reads them and reports which are on
+disk; `--reference` compares the list against another platform's.
+
+Against the negroni reference (46 references): **8 only here, 3 only there**.
+
+Only here -- cupid's platform names them, negroni's does not:
+
+| Driver | Role |
+|---|---|
+| `ButtonsDxe` | the physical keys |
+| `ChargerExDxe` | the charger |
+| `FeatureEnablerDxe` | the board's feature switches |
+| `LimitsDxe` | the thermal and power limits |
+| `PmicDxe/PmicDxeLa` | the PMIC |
+| `PmicGlinkDxe` | the PMIC over GLINK |
+| `ProjectInfoDxe` | the board's project identity |
+| `QcomChargerDxe/QcomChargerDxeLA` | the Qualcomm charger |
+
+Only there -- negroni's platform names them, cupid's does not:
+
+| Driver | Why it is not a gap |
+|---|---|
+| `DiskIoDxe`, `PartitionDxe` | cupid's platform takes these from `MdeModulePkg` instead of the vendor tree, so the reference's `Binaries/negroni/...` path does not appear |
+| `SPSSDxe` | the SPSS driver; negroni enables the sensor-processor subsystem and cupid's platform does not name it |
+
+**None of this is a claim that the 51 are right.** The list is what the platform names; whether the
+phone's volume holds those, and whether they are the build cupid shipped, is what the unpack has to
+answer.
+
 ## The order this has to happen in
 
 1. pull the phone's `uefi.img` (read-only, nothing is flashed);
 2. unpack it, and see which FFS files the volume actually holds;
-3. write cupid's own `.inc` list from what the phone's volume provides, derived from cupid's device
-   tree and platform -- never copied from negroni;
-4. place the binaries under `Binaries/cupid`, run the checker until it reports none missing;
+3. compare what it holds against the platform's 51, and adjust the list where the phone disagrees --
+   the phone is the authority, not the reference board;
+4. place the binaries under `Binaries/cupid`, run `tools/uefi-build-check.py` until it reports none
+   missing;
 5. build the volume, and only then see whether it links.
 
 Steps 1 and 2 need the phone. Steps 3 to 5 are blocked on them.
