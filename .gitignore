@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+# the vendor's own firmware and the phone's own device tree: pulled, never committed
+fw-*/
+prebuilt/device-tree.dtb

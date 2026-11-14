@@ -70,8 +70,8 @@ each one back when it has been made to work here. `tools/hakios-config.py show` 
 
 ## Firmware
 
-Pulled from your own phone, never committed: `devices/redwood/pull-firmware.sh`, or
-`pull-firmware-root.sh` where the firmware is readable by root only. Check with `make doctor`.
+Pulled from your own phone, never committed: `pull-firmware.sh`, or `pull-firmware-root.sh` where
+the firmware is readable by root only. Both only read -- nothing on the phone is written.
 
 ## Before you open a pull request
 
