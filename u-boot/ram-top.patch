@@ -1,0 +1,22 @@
+diff --git a/arch/arm/mach-snapdragon/board.c b/arch/arm/mach-snapdragon/board.c
+--- a/arch/arm/mach-snapdragon/board.c
++++ b/arch/arm/mach-snapdragon/board.c
+@@ -754,3 +754,18 @@
+ 	}
+ 	dcache_enable();
+ }
++
++/*
++ * Cupid: ABL leaves the boot image's ramdisk around 0xb6562000. U-Boot relocates and allocates
++ * downwards from the top of RAM, which scribbled over that container before `hakios load` could
++ * read it (the first word there was random). Keep U-Boot below the payload window so the HKUB
++ * survives. The payload itself starts at 0xB0000000, so this is a safe boundary.
++ */
++phys_addr_t board_get_usable_ram_top(phys_size_t total_size)
++{
++	phys_addr_t top = gd->ram_base + get_effective_memsize();
++
++	if (top > 0xB0000000UL)
++		top = 0xB0000000UL;
++	return top;
++}

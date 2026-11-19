@@ -1,0 +1,29 @@
+diff --git a/xnuloader/loader.c b/xnuloader/loader.c
+--- a/xnuloader/loader.c
++++ b/xnuloader/loader.c
+@@ -588,6 +588,15 @@
+ 	.small_cores = 0x0f,
+ };
+ 
++/* Xiaomi 12 (cupid, SM8450/waipio): GIC, topology and panel from its own device tree. */
++static const struct platform platform_cupid = {
++	.name = "cupid", .io_base = 0x00400000, .io_size = 0x3FC00000,
++	.gic_dist = 0x17100000, .gic_redist = 0x17180000, .uart = 0, .log_other_cpu = 1,
++	.cores = 8, .core_shift = 8,
++	/* 1x Cortex-X2, 3x Cortex-A710, 4x Cortex-A510: the last four are the little ones. */
++	.small_cores = 0xf0,
++};
++
+ /* ------------------------------------------------------------------------ */
+ 
+ static void
+@@ -4345,6 +4354,9 @@
+ 		SCREEN.stride = GOP->mode->info->pixels_per_scanline * 4;
+ 		if (SCREEN.base == 0xE1000000ULL) {
+ 			PLAT = &platform_redwood;
++		} else if (SCREEN.base == 0xB8000000ULL) {
++			/* the panel ABL leaves live on cupid (cont_splash_region) */
++			PLAT = &platform_cupid;
+ 		} else {
+ 			ramfb_phone_screen();
+ 		}

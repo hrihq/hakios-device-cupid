@@ -5,7 +5,7 @@ requires_kernel_header = true
 # The phone's own uefi_a.img is an ELF64 whose PT_LOAD maps the FV at 0xA7000000
 # (filesz 0x2a0000). Use that measured address instead of the earlier guess in the gap
 # after ADSP, which never produced a display or a loader on the first boot attempt.
-base = 0xA7000000
+base = 0xA7100000
 size = 0x300000
 
 [boot_image_kernel]
@@ -14,3 +14,8 @@ append_dtb         = true
 
 [boot_image]
 header_version = 4
+[vendor_drivers]
+# "none" = blob-free: the DXE list carries no Binaries/cupid/ entries. The phone's own DXE set
+# stops this SoC family from booting (ClockDxe halts the panel scanout, PmicDxe aborts on SPMI),
+# so the platform runs on the SoC package alone until a single driver is proven here.
+mode = "none"

@@ -1,17 +1,27 @@
 name: build-uboot-cupid
 
 # Build HakiOS's U-Boot for the Xiaomi 12 from the common repository at a pinned revision, with
-# this device repository linked in as devices/cupid. The phone's own Android device tree is the
-# firmware: U-Boot is built with EXT_DTB pointing at it. Nothing is flashed. A green run means the
+# this device repository linked in as devices/cupid, and built with this device's own device
+# tree of its own (u-boot/files/dts/.../sm8450-xiaomi-cupid.dts). Nothing is flashed. A green run means the
 # image builds; it is not a boot test.
 
 on:
   workflow_dispatch:
     inputs:
+      kernel_run:
+        description: 'build-kernel run id whose cupid-kernel artifact holds loader.efi and the kernel (empty = no payload)'
+        required: false
+        default: ''
+        type: string
+      beacon:
+        description: 'Bring-up paints: magenta at the top of _main (assembly), cyan at board_init_f (C)'
+        required: false
+        default: ''
+        type: string
       payload_base:
         description: 'Address where the loader/payload is placed (hex literal)'
         required: false
-        default: '0xF0000000UL'
+        default: '0xB0000000UL'
         type: string
   push:
     branches: [uboot-cupid]
@@ -36,14 +46,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install the toolchain
+      - name: Toolchain (the runner already has the rest)
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends \
-            build-essential git make gcc-aarch64-linux-gnu device-tree-compiler \
-            bison flex libssl-dev python3 python3-pip curl ca-certificates
+          # Only the cross compiler is missing from the runner image; installing the long list again
+          # cost 15-20 minutes a run, and apt-get update is not needed either - the image ships its
+          # package lists. Anything that turns out to be absent is named below instead of guessed at.
+          have() { command -v "$1" >/dev/null || { echo "::error ::$1 is missing from the runner image"; exit 1; }; }
+          need=()
+          command -v aarch64-linux-gnu-gcc >/dev/null || need+=(gcc-aarch64-linux-gnu)
+          [ ${#need[@]} -eq 0 ] || sudo apt-get install -y --no-install-recommends "${need[@]}"
           aarch64-linux-gnu-gcc --version | head -1
+          for t in make gcc bison flex swig bc lz4 gzip python3; do have "$t"; done
 
       - name: Clone the common repository and link this device
         run: |
@@ -82,38 +96,159 @@ jobs:
         run: |
           U_BOOT="$GITHUB_WORKSPACE/uboot-tree" "$GITHUB_WORKSPACE/hakios-uefi/u-boot/apply.sh" cupid
 
-      - name: Generate the U-Boot DTS from cupid's own DTB
+      - name: Our own device tree, not the phone's Android one
         run: |
           set -euo pipefail
-          # dtc turns the phone's DTB back into a DTS U-Boot can compile as its default tree.
-          dtc -I dtb -O dts -q \
-            -o uboot-tree/dts/upstream/src/arm64/qcom/sm8450-xiaomi-cupid.dts \
-            common/devices/cupid/prebuilt/device-tree.dtb
+          # docs/u-boot.md: a device tree of its own on top of the upstream SoC's. The phone's Android
+          # tree has no simple-framebuffer node, so using it as U-Boot's own tree leaves the console
+          # nowhere to write and the firmware dies before it can say anything.
+          dts=uboot-tree/dts/upstream/src/arm64/qcom/sm8450-xiaomi-cupid.dts
+          test -f "$dts"
+          grep -q 'simple-framebuffer' "$dts"
+          grep -q 'hakios-payload@b0000000' "$dts"
+          grep -q 'dr_mode = "peripheral"' "$dts"
+          grep -c 'framebuffer@b8000000' "$dts"
+          # the image ABL starts still carries the phone's own Android tree, as on redwood
+          cp uefi/files/Resources/DTBs/cupid.dtb common/devices/cupid/prebuilt/device-tree.dtb
+          python3 - <<'PY'
+          import pathlib, struct
+          b = pathlib.Path("common/devices/cupid/prebuilt/device-tree.dtb").read_bytes()
+          assert b[:4] == bytes.fromhex("d00dfeed"), "the phone device tree is not a dtb"
+          print("phone dtb: %d bytes, magic d00dfeed" % len(b))
+          PY
+
+      - name: Bring-up beacon (optional)
+        if: inputs.beacon != ''
+        run: |
+          set -euo pipefail
+          # Three answers from one boot:
+          #   magenta in the top quarter - U-Boot's assembly entry (_main) ran
+          #   cyan over the whole panel  - its first C function (board_init_f) ran
+          #   then one green band of 100 px per early init call, top to bottom: the number of bands is the
+          #   index of the call that never returned, and the table printed below names it.
           python3 - <<'PY'
           import re
-          p = "uboot-tree/dts/upstream/src/arm64/qcom/sm8450-xiaomi-cupid.dts"
+          p = "uboot-tree/arch/arm/lib/crt0_64.S"
           s = open(p).read()
-          # ABL leaves the panel's framebuffer live at 0xB8000000 (cont_splash_region).
-          # U-Boot's vidconsole needs a simple-framebuffer node; the Android DTB has none.
-          if "simple-framebuffer" not in s:
-              fb = "\n\tframebuffer0: framebuffer@b8000000 {\n\t\tcompatible = \"simple-framebuffer\";\n\t\treg = <0x0 0xb8000000 0x0 0x28e0000>;\n\t\twidth = <1080>;\n\t\theight = <2400>;\n\t\tstride = <4320>;\n\t\tformat = \"a8r8g8b8\";\n\t};\n"
-              m = re.search(r"\n\s*chosen\s*\{", s)
-              assert m, "no chosen node in the DTS"
-              s = s[:m.start()] + fb + s[m.start():]
-          s = re.sub(r'dr_mode = "[^"]*"', 'dr_mode = "peripheral"', s)
+          m = re.search(r"\nENTRY\(_main\)\n", s)
+          assert m, "no ENTRY(_main) in crt0_64.S"
+          asm = (
+              "\t/* cupid bring-up: top quarter magenta as soon as the assembly entry runs */\n"
+              "\tldr\tx7, =0xB8000000\n"
+              "\tldr\tx8, =(1080 * 600)\n"
+              "\tmovz\tw9, #0x00ff\n"
+              "\tmovk\tw9, #0xffff, lsl #16\n"
+              "1:\tstr\tw9, [x7], #4\n"
+              "\tsubs\tx8, x8, #1\n"
+              "\tb.ne\t1b\n"
+              "\tdsb\tsy\n"
+          )
+          open(p, "w").write(s[:m.end()] + asm + s[m.end():])
+
+          p = "uboot-tree/common/board_f.c"
+          s = open(p).read()
+          a = "void board_init_f(ulong boot_flags)\n{\n"
+          assert s.count(a) == 1, "unexpected board_init_f"
+          cyan = (
+              "\t/* cupid bring-up: the first C code U-Boot runs paints the panel cyan */\n"
+              "\t{\n"
+              "\t\tvolatile u32 *f = (volatile u32 *)0xB8000000UL;\n"
+              "\t\tunsigned i;\n"
+              "\t\tfor (i = 0; i < 1080u * 2400u; i++)\n"
+              "\t\t\tf[i] = 0xFF00FFFFu;\n"
+              "\t}\n"
+          )
+          s = s.replace(a, a + cyan)
+
+          b = "static void initcall_run_f(void)"
+          assert s.count(b) == 1
+          bands = (
+              "/* ---- cupid bring-up: a green band per early init call, 100 px each, top to bottom ---- */\n"
+              "static const u32 cupid_colour[12] = {\n"
+              "\t0xFFFF0000u, 0xFFFF8000u, 0xFFFFFF00u, 0xFF00FF00u, 0xFF00FFFFu, 0xFF0000FFu,\n"
+              "\t0xFFFF00FFu, 0xFFFFFFFFu, 0xFF8000FFu, 0xFF808080u, 0xFF008000u, 0xFF000080u,\n"
+              "};\n"
+              "static void cupid_band(int n)\n"
+              "{\n"
+              
+              "\tvolatile u32 *fb = (volatile u32 *)0xB8000000UL;\n"
+              "\tunsigned y, x;\n"
+              "\n"
+              "\tif (n >= 12)\n"
+              "\t\treturn;\n"
+              "\tfor (y = (unsigned)n * 200u; y < (unsigned)(n + 1) * 200u; y++)\n"
+              "\t\tfor (x = 0; x < 1080u; x++)\n"
+              "\t\t\tfb[y * 1080u + x] = cupid_colour[n];\n"
+              "\t__asm__ volatile(\"dsb sy\" ::: \"memory\");\n"
+              
+              "}\n"
+              "\n"
+              "#undef INITCALL\n"
+              "#define INITCALL(_call) \\\n"
+              "\tdo { \\\n"
+              "\t\tcupid_band(__COUNTER__); \\\n"
+              "\t\tif (_call()) { \\\n"
+              "\t\t\tprintf(\"%s(): initcall %s() failed\\n\", __func__, #_call); \\\n"
+              "\t\t\thang(); \\\n"
+              "\t\t} \\\n"
+              "\t} while (0)\n"
+              "/* ---- end cupid bring-up ---- */\n"
+              "\n"
+          )
+          s = s.replace(b, bands + b)
           open(p, "w").write(s)
-          print("framebuffer and usb peripheral set")
+          print("beacons in: crt0_64.S (magenta), board_f.c (cyan + one band per INITCALL)")
           PY
-          wc -l uboot-tree/dts/upstream/src/arm64/qcom/sm8450-xiaomi-cupid.dts
+          echo "counter uses in board_f.c (must be 1: the band macro): $(grep -c '__COUNTER__' uboot-tree/common/board_f.c)"
+          echo "band index -> early init call"
+          awk '/static void initcall_run_f\(void\)/{f=1} f && /INITCALL\(/{print} f && /^}/{exit}' \
+            uboot-tree/common/board_f.c | grep -o 'INITCALL([a-z0-9_]*)' | nl -v0 -w2 -s' = '
+
+      - name: Embed the loader and its payload in U-Boot
+        if: inputs.kernel_run != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KERNEL_RUN: ${{ inputs.kernel_run }}
+        run: |
+          set -euo pipefail
+          # ABL did not leave our ramdisk anywhere readable, and U-Boot overwrote the DT pointer.
+          # Link the HKUB into U-Boot itself instead: it is relocated with the binary and needs no
+          # firmware handoff, no USB and no UFS (docs/u-boot.md, "one image, loader and payload inside").
+          gh run download "$KERNEL_RUN" -R "$GITHUB_REPOSITORY" -n cupid-kernel -D k >/dev/null
+          python3 common/xnuloader/mkpayload.py --usb -o payload.bin \
+            loader.efi=k/cupid-loader.efi kernel=k/cupid-kernel \
+            ramdisk=common/prebuilt/userland/hello \
+            resident=k/root.apfs --cmdline=-v
+          # HKUB: u32 magic/version/count/header_size, then 32-byte entries, 4 KiB aligned.
+          python3 - <<'PY'
+          import pathlib, struct, zlib
+          r = pathlib.Path(".")
+          entries = [(b"payload", (r/"payload.bin").read_bytes()),
+                     (b"loader", (r/"k"/"cupid-loader.efi").read_bytes())]
+          head = 16 + 32 * len(entries)
+          off = (head + 0xfff) & ~0xfff
+          table = b""; body = b""
+          for name, data in entries:
+              table += struct.pack("<16sIIII", name, off + len(body), len(data), zlib.crc32(data), 0)
+              body += data + b"\0" * (-len(data) % 0x1000)
+          h = struct.pack("<4sIII", b"HKUB", 1, len(entries), head) + table
+          (r/"payload.hkub").write_bytes(h + b"\0" * (off - len(h)) + body)
+          print("HKUB %d bytes" % (r/"payload.hkub").stat().st_size)
+          PY
+          test -s payload.hkub
+          ( cd uboot-tree && patch -p1 --forward --batch -i "$GITHUB_WORKSPACE/u-boot/embed-payload.patch" )
+          sed -i "s|/CUPID_PAYLOAD_PATH/|$GITHUB_WORKSPACE/payload.hkub|" uboot-tree/arch/arm/lib/crt0_64.S
+          grep -n "incbin" uboot-tree/arch/arm/lib/crt0_64.S
+          grep -n "embedded container" uboot-tree/cmd/hakios.c
 
       - name: Build U-Boot with cupid's own device tree
         env:
-          EXT_DTB: ${{ github.workspace }}/common/devices/cupid/prebuilt/device-tree.dtb
           CROSS_COMPILE: aarch64-linux-gnu-
           U_BOOT: ${{ github.workspace }}/uboot-tree
-          PAYLOAD_BASE: ${{ inputs.payload_base || '0xF0000000UL' }}
+          PAYLOAD_BASE: ${{ inputs.payload_base || '0xB0000000UL' }}
         run: |
-          # SM8450's TZ apps occupy 0xF0000000; put the payload in the free high DDR window.
+          # 0xF0000000 sits inside SM8450's TZ apps carve-out; the waipio family's measured payload
+          # base is 0xB0000000 (see docs/boot-runbook.md).
           sed -i "s/#define PAYLOAD_BASE.*/#define PAYLOAD_BASE\t\t$PAYLOAD_BASE/" "$GITHUB_WORKSPACE/uboot-tree/cmd/hakios.c"
           grep -n 'define PAYLOAD_BASE' "$GITHUB_WORKSPACE/uboot-tree/cmd/hakios.c"
           "$GITHUB_WORKSPACE/hakios-uefi/u-boot/build.sh" cupid
@@ -121,9 +256,14 @@ jobs:
       - name: Pack a boot image with no payload
         run: |
           set -euo pipefail
-          cd common
-          tools/mkubootimg.py -d cupid -u "$GITHUB_WORKSPACE/uboot-tree/build-cupid/u-boot.bin" \
-            -o "$GITHUB_WORKSPACE/hakios-u-boot.img"
+          # Header v4 with os_version/os_patch_level 0: waipio's ABL accepts anything else and boots
+          # the slot instead of the image (docs/boot-runbook.md).
+          python3 tools/mkuboot-cupid.py --uboot "$GITHUB_WORKSPACE/uboot-tree/build-cupid/u-boot.bin" \
+            --dtb "$GITHUB_WORKSPACE/common/devices/cupid/prebuilt/device-tree.dtb" \
+            --uboot-dtb "$GITHUB_WORKSPACE/uboot-tree/build-cupid/u-boot.dtb" \
+            $([ -s payload.hkub ] && echo --ramdisk "$GITHUB_WORKSPACE/payload.hkub") \
+            --mkbootimg "$GITHUB_WORKSPACE/common/devices/cupid/prebuilt/mkbootimg.py" \
+            --out "$GITHUB_WORKSPACE/hakios-u-boot.img"
           sha256sum "$GITHUB_WORKSPACE/hakios-u-boot.img"
 
       - name: Upload the U-Boot build
@@ -134,6 +274,7 @@ jobs:
             hakios-u-boot.img
             uboot-tree/build-cupid/u-boot.bin
             uboot-tree/build-cupid/.config
+            uboot-tree/build-cupid/u-boot.dtb
           if-no-files-found: error
           retention-days: 30
 
@@ -144,6 +285,7 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "- common repository: \`$COMMON_REV\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- U-Boot: \`$(cat hakios-uefi/u-boot/BASE 2>/dev/null || echo unknown)\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- device tree: the phone's own \`uefi/files/Resources/DTBs/cupid.dtb\` (EXT_DTB)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- U-Boot device tree: \`u-boot/files/dts/upstream/src/arm64/qcom/sm8450-xiaomi-cupid.dts\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- appended device tree (for ABL): \`uefi/files/Resources/DTBs/cupid.dtb\`" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "A built image is not a boot test. Do not flash it: \`fastboot boot\` only." >> "$GITHUB_STEP_SUMMARY"

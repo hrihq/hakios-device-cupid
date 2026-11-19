@@ -36,7 +36,7 @@
   #
   # UEFI Stack  (the provisional HakiOS region: see uefi/README.md here)
   #
-  gArmPlatformTokenSpaceGuid.PcdCPUCoresStackBase|0xA340D000
+  gArmPlatformTokenSpaceGuid.PcdCPUCoresStackBase|0xA760D000
   gArmPlatformTokenSpaceGuid.PcdCPUCorePrimaryStackSize|0x40000
 
   #
@@ -61,6 +61,11 @@
   gQcomPkgTokenSpaceGuid.PcdPlatformType|"LA"
 
   #
+  # Bring-up: an ASSERT prints and carries on
+  #
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x03
+
+  #
   # Storage
   #
   gQcomPkgTokenSpaceGuid.PcdStorageIsUfs3|FALSE
@@ -81,3 +86,8 @@
   # ACPI Tables
   #
   cupid/AcpiTables.inf
+
+[BuildOptions]
+  # Waipio: 0xF0000000 is inside the TZ apps carve-out (0xEA000000-0xF1400000).
+  # Keep in sync with build-kernel.yml, XnuLoader.h and tools/mkxnuimg-cupid.py.
+  *_*_*_CC_FLAGS = -DXNU_PAYLOAD_BASE=0xB0000000ULL

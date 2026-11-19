@@ -216,6 +216,21 @@ def check_vendor(mu):
         if os.path.isfile(f):
             refs += re.findall(r"INF\s+Binaries/cupid/(\S+\.inf)", open(f, encoding="utf-8", errors="replace").read())
     refs = sorted(set(refs))
+    mode = "device"
+    toml = os.path.join(mu, "Resources", "Configs", "cupid.toml")
+    if os.path.isfile(toml):
+        try:
+            with open(toml, "rb") as f:
+                mode = tomllib.load(f).get("vendor_drivers", {}).get("mode", "device")
+        except Exception as e:
+            warn("cupid.toml's vendor_drivers mode could not be read", str(e))
+    if mode == "none":
+        # Blob-free is a deliberate state, not an unfinished one: on waipio the vendor DXE set
+        # (ClockDxe halts the panel scanout, PmicDxe aborts on SPMI) stops the boot, so the platform
+        # runs on the SoC package alone until one driver at a time is proven here.
+        check(not refs, "the platform is blob-free and the driver list names no vendor DXEs",
+              "%d of them" % len(refs))
+        return
     check(bool(refs), "the driver list names vendor DXEs", "%d of them" % len(refs))
     present = [r for r in refs if os.path.isfile(os.path.join(mu, "Binaries", "cupid", r))]
     missing = [r for r in refs if r not in present]

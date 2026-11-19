@@ -1,0 +1,81 @@
+diff --git a/BootShim/BootShim.S b/BootShim/BootShim.S
+--- C:\Users\heri\AppData\Local\Temp\shimprobe\base\BootShim\BootShim.S	2026-11-18 06:22:07.746742500 -0800
++++ C:\Users\heri\AppData\Local\Temp\shimprobe\Mu-Silicium\BootShim\BootShim.S	2026-11-18 06:22:07.732800400 -0800
+@@ -51,6 +51,77 @@
+ #endif
+   ldr   x5, =FD_BASE
+ 
++#ifdef CUPID_SHIM_PROBE
++  /*
++   * Cupid bring-up probe, one boot, three answers, held on screen:
++   *   whole screen  = the exception level ABL entered us at
++   *                   red = EL1, blue = EL2, yellow = EL3
++   *   top quarter   = is the MMU already on at that level
++   *                   black = off, white = on
++   *   bottom quarter= did the FD really land at FD_BASE (first word is the FV entry branch)
++   *                   green = yes, magenta = no
++   */
++  mrs   x10, CurrentEL
++  and   x10, x10, #0xc
++  ldr   w9, =0xFFFF0000        /* EL1: red */
++  cmp   x10, #0x4
++  b.eq  _Probe
++  ldr   w9, =0xFF0000FF        /* EL2: blue */
++  cmp   x10, #0x8
++  b.eq  _Probe
++  ldr   w9, =0xFFFFFF00        /* EL3: yellow */
++_Probe:
++  ldr   x7, =0xB8000000
++  ldr   x8, =(1080 * 2400)
++_ProbeFill:
++  str   w9, [x7], #4
++  subs  x8, x8, #1
++  b.ne  _ProbeFill
++
++  ldr   w9, =0xFF000000        /* MMU off: black */
++  cmp   x10, #0x4
++  b.ne  _ProbeNotEl1
++  mrs   x11, sctlr_el1
++  b     _ProbeMmu
++_ProbeNotEl1:
++  cmp   x10, #0x8
++  b.ne  _ProbeEl3
++  mrs   x11, sctlr_el2
++  b     _ProbeMmu
++_ProbeEl3:
++  mrs   x11, sctlr_el3
++_ProbeMmu:
++  tbz   x11, #0, _ProbeTop
++  ldr   w9, =0xFFFFFFFF        /* MMU on: white */
++_ProbeTop:
++  ldr   x7, =0xB8000000
++  ldr   x8, =(1080 * 600)
++_ProbeTopFill:
++  str   w9, [x7], #4
++  subs  x8, x8, #1
++  b.ne  _ProbeTopFill
++
++  ldr   w9, =0xFFFF00FF        /* the FD is not at FD_BASE: magenta */
++  ldr   x7, =FD_BASE
++  ldr   w11, [x7]
++  ldr   w12, =0x14000400       /* the FV entry branch GenFv writes: b #0x4000 */
++  cmp   w11, w12
++  b.ne  _ProbeBottom
++  ldr   w9, =0xFF00FF00        /* the FD is there: green */
++_ProbeBottom:
++  ldr   x7, =0xB8000000
++  ldr   x8, =(1080 * 600 * 3)
++  add   x7, x7, x8, lsl #2
++  ldr   x8, =(1080 * 600)
++_ProbeBottomFill:
++  str   w9, [x7], #4
++  subs  x8, x8, #1
++  b.ne  _ProbeBottomFill
++  dsb   sy
++_ProbeHold:
++  wfe
++  b     _ProbeHold
++#endif
+ _Entry:
+   br    x5
+ 

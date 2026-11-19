@@ -1,0 +1,13 @@
+diff --git a/xnuloader/loader.c b/xnuloader/loader.c
+--- a/xnuloader/loader.c
++++ b/xnuloader/loader.c
+@@ -3238,7 +3238,8 @@
+ 	dt_prop(&w, "random-seed", seed, sizeof(seed));
+ 	dt_prop_u64(&w, "dram-base", phys_base);
+ 	dt_prop_u64(&w, "dram-size", win_size);
+-	dt_prop_u32(&w, "debug-enabled", 1);
++	/* bring-up: no debugger is attached on this phone, so do not open a KDP session */
++	dt_prop_u32(&w, "debug-enabled", 0);
+ 	/* what MobileGestalt answers "main screen scale" from: 3 device pixels per point */
+ 	dt_prop_u32(&w, "display-scale", 3);
+ 	dt_prop_u32(&w, "display-rotation", 0);

@@ -106,6 +106,27 @@ def main():
         print("uefi-build-check: no platform at %s" % args.platform)
         return 1
     found = collect(args.platform, args.board)
+    toml = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(args.platform))),
+                        "Resources", "Configs", "%s.toml" % args.board)
+    mode = "device"
+    if os.path.isfile(toml):
+        try:
+            import tomllib
+            with open(toml, "rb") as handle:
+                mode = tomllib.load(handle).get("vendor_drivers", {}).get("mode", "device")
+        except Exception as error:  # a missing or older toml leaves the default
+            print("uefi-build-check: could not read %s: %s" % (toml, error))
+    if mode == "none":
+        # Blob-free is a deliberate state: the vendor's DXE set stops this SoC family from booting.
+        if found:
+            print("uefi-build-check: %s declares blob-free but names %d vendor reference(s)"
+                  % (toml, len(found)))
+            for reference in sorted(found):
+                print("  unexpected  %s" % reference)
+            return 1
+        print("uefi-build-check: %s is blob-free (vendor_drivers.mode = none); no vendor references"
+              % args.platform)
+        return 0
     if not found:
         print("uefi-build-check: %s names no Binaries/%s/ references" % (args.platform, args.board))
         return 1
