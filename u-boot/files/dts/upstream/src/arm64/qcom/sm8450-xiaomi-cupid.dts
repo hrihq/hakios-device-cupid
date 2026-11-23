@@ -1,0 +1,165 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * The Xiaomi 12 (cupid, SM8450) for HakiOS's U-Boot.
+ *
+ * Written the way docs/u-boot.md says: a device tree of its own on top of the upstream SoC's
+ * (sm8450.dtsi), never the phone's Android device tree, which describes a kernel's view and has no
+ * simple-framebuffer node at all - a running U-Boot would have nowhere to write its console.
+ *
+ * Only what U-Boot needs: the panel's framebuffer as the bootloader left it, the keys, USB as a
+ * device (fastboot), UFS, and the memory that must not be taken. Every address is the phone's own,
+ * read from its device tree (uefi/files/Resources/DTBs/cupid.dtb) and from Silicium's memory map
+ * (uefi/files/Platforms/Xiaomi/cupidPkg/Library/MemoryMapLib/MemoryMapLib.c).
+ *
+ * The size of RAM is not here: ABL writes it into the device tree it hands over (the appended
+ * Android one) and U-Boot reads it from there (arch/arm/mach-snapdragon/board.c,
+ * qcom_parse_memory()).
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/arm/qcom,ids.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/linux-event-codes.h>
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+#include "sm8450.dtsi"
+#include "pm8350.dtsi"
+#include "pm8350b.dtsi"
+#include "pm8350c.dtsi"
+#include "pm8450.dtsi"
+#include "pmk8350.dtsi"
+#include "pmr735a.dtsi"
+#include "pmr735b.dtsi"
+
+/*
+ * sm8450.dtsi reserves 0x9fd00000 for rmtfs; on this phone the ADSP image is there instead, and the
+ * phone's own tree has no rmtfs carve-out at all.
+ */
+/delete-node/ &rmtfs_mem;
+/* the phone keeps one XBL scratch region, at 0xa6e00000, not two */
+/delete-node/ &xbl_sc_mem2;
+
+/ {
+	model = "Xiaomi 12 (cupid)";
+	compatible = "xiaomi,cupid", "qcom,sm8450";
+	chassis-type = "handset";
+
+	/* what ABL matches against; the appended Android device tree carries the same */
+	qcom,msm-id = <QCOM_ID_SM8450 0x20000>, <QCOM_ID_SM8450_3 0x20000>,
+		      <QCOM_ID_SM8450 0x10000>, <QCOM_ID_SM8450_3 0x10000>;
+	qcom,board-id = <0x10008 0>;
+
+	chosen {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		/*
+		 * The panel as ABL left it, at cont_splash_region (0xB8000000, reserved for 0x2b00000):
+		 * 1080 x 2400, 32 bits. This is the only reason a black screen can be read as "U-Boot
+		 * never ran" rather than "U-Boot ran and had nothing to write on". No clocks: U-Boot
+		 * keeps the display running by not touching it.
+		 */
+		framebuffer0: framebuffer@b8000000 {
+			compatible = "simple-framebuffer";
+			reg = <0x0 0xb8000000 0x0 (1080 * 2400 * 4)>;
+			width = <1080>;
+			height = <2400>;
+			stride = <(1080 * 4)>;
+			format = "a8r8g8b8";
+		};
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		pinctrl-0 = <&kypd_volp_n>;
+		pinctrl-names = "default";
+
+		key-volume-up {
+			label = "Volume Up";
+			gpios = <&pm8350_gpios 6 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+	};
+
+	reserved-memory {
+		/*
+		 * Where the HakiOS loader takes its payload from (PAYLOAD_BASE): 64 MiB with the panic
+		 * log in its last MiB. Mapped (no no-map): the hakios command writes here, and nothing
+		 * else in U-Boot may take it. 0xF0000000 would be inside the trusted apps' carve-out.
+		 */
+		hakios_payload_mem: hakios-payload@b0000000 {
+			reg = <0x0 0xb0000000 0x0 0x4000000>;
+		};
+	};
+};
+
+/* the phone's own ADSP image, where sm8450.dtsi puts rmtfs */
+&adsp_mem {
+	reg = <0x0 0x9fd00000 0x0 0x3100000>;
+};
+
+&xbl_ramdump_mem {
+	reg = <0x0 0xa6b80000 0x0 0x280000>;
+};
+
+&xbl_sc_mem {
+	reg = <0x0 0xa6e00000 0x0 0x40000>;
+};
+
+&pm8350_gpios {
+	kypd_volp_n: kypd-volp-n-state {
+		pins = "gpio6";
+		function = PMIC_GPIO_FUNC_NORMAL;
+		power-source = <1>;
+		bias-pull-up;
+		input-enable;
+	};
+};
+
+&pon_pwrkey {
+	status = "okay";
+};
+
+&pon_resin {
+	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
+};
+
+/*
+ * UFS: the loader reads its partitions (logdump, darwin) through U-Boot's block devices. The
+ * phone's tree leaves reset-gpios empty, so U-Boot takes the controller as ABL left it.
+ *
+ * power-domains is dropped on purpose: sm8450.dtsi points it at the gcc power-controller's GDSCs,
+ * and U-Boot's Qualcomm clock drivers do not implement the power-domain uclass, so every probe
+ * failed with -19 ("power-domain driver not found") before the controller was even touched - UFS
+ * printed that and never scanned, USB printed it twice and gave up. ABL has already powered both
+ * (it uses them itself), so U-Boot only has to drive them.
+ */
+&ufs_mem_hc {
+	/delete-property/ power-domains;
+	/delete-property/ iommus;	/* no IOMMU driver in U-Boot: dev_iommu_enable() fails with -19 */
+	status = "okay";
+};
+
+&ufs_mem_phy {
+	/delete-property/ power-domains;
+	status = "okay";
+};
+
+/* USB 2.0 as a device: U-Boot's fastboot; the SuperSpeed PHY is left as ABL left it */
+&usb_1 {
+	/delete-property/ power-domains;	/* see ufs_mem_hc above */
+	/delete-property/ iommus;		/* ditto: no IOMMU driver, probe dies with -19 */
+	qcom,select-utmi-as-pipe-clk;
+	dr_mode = "peripheral";
+	maximum-speed = "high-speed";
+	phys = <&usb_1_hsphy>;
+	phy-names = "usb2-phy";
+	status = "okay";
+};
+
+&usb_1_hsphy {
+	status = "okay";
+};

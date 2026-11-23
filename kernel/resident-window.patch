@@ -1,0 +1,15 @@
+diff --git a/xnuloader/loader.c b/xnuloader/loader.c
+--- a/xnuloader/loader.c
++++ b/xnuloader/loader.c
+@@ -31,5 +31,10 @@
+  * number of kernel runs (nothing writes to it: the root is read-only).
+  */
+ #define RESIDENT_RD_OFFSET  0x08000000ULL
+-#define RESIDENT_RD_RESERVE 0x30000000ULL         /* RAM that must remain for the kernel itself */
++/*
++ * Cupid: the largest free window is ~738-864 MiB (below/above the 64 MiB payload at 0xB0000000,
++ * under the TZ carve-out at 0xEA000000). The stock 768 MiB reserve demands a window > 896 MiB,
++ * which this phone never has, so every resident root was rejected. 256 MiB still guards the fit.
++ */
++#define RESIDENT_RD_RESERVE 0x10000000ULL         /* RAM that must remain for the kernel itself */
+ #define PAGE_SIZE_MAX       0x4000ULL

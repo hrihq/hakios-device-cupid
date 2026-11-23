@@ -10,7 +10,7 @@ on:
       payload_base:
         description: "Address where the loader/payload is placed (hex literal)"
         required: false
-        default: "0xF0000000ULL"
+        default: "0xB0000000ULL"
         type: string
   push:
     branches: [adreno-730-cupid]
@@ -57,6 +57,8 @@ jobs:
           echo "apt: done"
 
       - name: Install theos with its Linux toolchain
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           export THEOS="$HOME/theos"
@@ -76,9 +78,23 @@ jobs:
           rm -rf common/devices/cupid
           ln -s "$GITHUB_WORKSPACE" common/devices/cupid
           echo "common at $(git -C common rev-parse HEAD)"
-          sed -i 's/#define PAYLOAD_BASE        0xF0000000ULL/#ifndef PAYLOAD_BASE\n#define PAYLOAD_BASE        0xF0000000ULL\n#endif/' common/xnuloader/loader.c
-          sed -i 's/-c loader.c/$LOADER_CFLAGS -c loader.c/' common/xnuloader/build.sh
-          grep -n 'PAYLOAD_BASE' common/xnuloader/loader.c | head -3
+          # The loader reads XNU from PAYLOAD_BASE directly, so the value must be compiled in.
+          # A #ifndef plus LOADER_CFLAGS did not take effect: sed never matched the source line,
+          # and the loader kept 0xF0000000 (inside the trusted apps carve-out on this SoC).
+          # Rewrite the define itself and make the build fail if it did not stick.
+          sed -i -E "s/^[[:space:]]*#define[[:space:]]+PAYLOAD_BASE[[:space:]]+.*/#define PAYLOAD_BASE ${{ inputs.payload_base || '0xB0000000ULL' }}/" common/xnuloader/loader.c
+          grep -n "define PAYLOAD_BASE" common/xnuloader/loader.c
+          grep -q "PAYLOAD_BASE.*${{ inputs.payload_base || '0xB0000000ULL' }}" common/xnuloader/loader.c || { echo "::error ::PAYLOAD_BASE was not rewritten"; exit 1; }
+          # The loader only recognized redwood's framebuffer; on cupid it fell back to the QEMU
+          # platform (wrong GIC/UART) and froze right after the banner. Give it a real cupid platform.
+          ( cd common && patch -p1 --forward --batch -i "$GITHUB_WORKSPACE/kernel/cupid-platform.patch" )
+          grep -n "platform_cupid" common/xnuloader/loader.c | head -3
+          ( cd common && patch -p1 --forward --batch -i "$GITHUB_WORKSPACE/kernel/no-debug-session.patch" )
+          grep -n "debug-enabled" common/xnuloader/loader.c | head -2
+          # The stock resident reserve (768 MiB) demands a memory window > 896 MiB; cupid's largest
+          # free block is ~738-864 MiB, so every resident root was rejected and the phone reset.
+          ( cd common && patch -p1 --forward --batch -i "$GITHUB_WORKSPACE/kernel/resident-window.patch" )
+          grep -q "RESIDENT_RD_RESERVE 0x10000000ULL" common/xnuloader/loader.c || { echo "::error::resident-window patch did not apply"; exit 1; }
 
       - name: Configure for cupid
         working-directory: common
@@ -116,9 +132,24 @@ jobs:
           set -euo pipefail
           # no IPSW here: this loader can boot the open kernel with an Apple-free ramdisk, not Darwin
           xnuloader/mkidentity.sh --placeholder
-          LOADER_CFLAGS="-DPAYLOAD_BASE=${{ inputs.payload_base || '0xF0000000ULL' }}" xnuloader/build.sh
+          LOADER_CFLAGS="-DPAYLOAD_BASE=${{ inputs.payload_base || '0xB0000000ULL' }}" xnuloader/build.sh
           cp xnuloader/loader.efi "$GITHUB_WORKSPACE/cupid-loader.efi"
           sha256sum "$GITHUB_WORKSPACE/cupid-loader.efi"
+
+      - name: Build the small userland (root.apfs)
+        working-directory: common
+        run: |
+          set -euo pipefail
+          # A first boot needs a real root filesystem: "hello" is only a 16 KiB test program.
+          # root.apfs carries init, etc/rc and the launchd jobs as the second ramdisk (resident).
+          export PATH="$PWD/xnu-deps/host/bin:$PATH"
+          export THEOS="$HOME/theos"
+          cd userland
+          # rc.darwin runs a few Darwin programs and halts instead of handing process 1 to
+          # launchd, so a failed launch does not reboot the phone before the log can be read.
+          RC=rc.darwin ./build.sh
+          ls -l root.apfs
+          cp root.apfs "$GITHUB_WORKSPACE/root.apfs"
 
       - name: Upload the kernel
         if: success()
@@ -138,6 +169,7 @@ jobs:
             cupid-kernel
             cupid-loader.efi
             common/kernel-build.log
+            root.apfs
           if-no-files-found: error
 
       - name: Report

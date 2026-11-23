@@ -30,6 +30,12 @@ jobs:
       - name: Checkout the device repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
+      - name: Check the payload base is consistent across every boot layer
+        run: |
+          set -euo pipefail
+          python3 tools/payload-base-check.py --self-test
+          python3 tools/payload-base-check.py
+
       - name: Check the GPU facts against the device tree
         run: |
           set -euo pipefail
@@ -44,7 +50,7 @@ jobs:
           mkdir -p "$dir"
           base="https://raw.githubusercontent.com/torvalds/linux/$LINUX_REV/drivers/gpu/drm/msm/registers/adreno"
           for f in a6xx.xml a6xx_gmu.xml adreno_common.xml; do
-            curl -fsSL "$base/$f" -o "$dir/$f"
+            curl -fsSL --retry 6 --retry-all-errors --retry-delay 5 "$base/$f" -o "$dir/$f"
             echo "$f $(wc -c < "$dir/$f") bytes"
           done
           echo "dir=$dir" >> "$GITHUB_ENV"

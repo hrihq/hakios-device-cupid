@@ -1,0 +1,42 @@
+diff --git a/cmd/hakios.c b/cmd/hakios.c
+--- a/cmd/hakios.c
++++ b/cmd/hakios.c
+@@ -199,6 +199,22 @@
+ 	return ret;
+ }
+ 
++/*
++ * Cupid: ABL's /chosen initrd points at the phone's own ramdisk, not at the HKUB in our image, and
++ * the first word there is random. Search all RAM that ABL could have handed us, in 256-byte steps
++ * (mkbootimg aligns to 4 KiB, but this also catches a relocated copy).
++ */
++static ulong cupid_find_hkub(void)
++{
++	ulong a;
++
++	for (a = 0x80000000UL; a < 0x400000000UL; a += 0x100UL) {
++		if (*(const u32 *)a == HKUB_MAGIC)
++			return a;
++	}
++	return 0;
++}
++
+ /* the size an HKUB container or an XNUP payload says it has; 0 for anything else */
+ static ulong known_size(const void *data)
+ {
+@@ -238,6 +254,15 @@
+ 		addr = hextoul(argv[1], NULL);
+ 		size = known_size(map_sysmem(addr, 0));
+ 		if (!size) {
++			ulong found = cupid_find_hkub();
++			if (found) {
++				const void *found_data;
++				addr = found;
++				size = known_size(map_sysmem(addr, 0));
++				found_data = map_sysmem(addr, size);
++				printf("[oosexgang] hakios: container found at %#lx\n", addr);
++				return take_container(found_data, size) ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
++			}
+ 			printf("[oosexgang] hakios: no HKUB container or XNUP payload at %#lx to take the size from\n", addr);
+ 			return CMD_RET_USAGE;
+ 		}

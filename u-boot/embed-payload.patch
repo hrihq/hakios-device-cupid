@@ -1,0 +1,43 @@
+diff --git a/arch/arm/lib/crt0_64.S b/arch/arm/lib/crt0_64.S
+--- a/arch/arm/lib/crt0_64.S
++++ b/arch/arm/lib/crt0_64.S
+@@ -176,3 +176,12 @@
+ #endif
+ 
+ ENDPROC(_main)
++
++/* Cupid: the loader and its payload are part of this image, not in a ramdisk ABL may move or drop. */
++	.section .rodata
++	.align 4
++	.global cupid_hkub
++cupid_hkub:
++	.incbin "/CUPID_PAYLOAD_PATH/"
++	.global cupid_hkub_end
++cupid_hkub_end:
+
+diff --git a/cmd/hakios.c b/cmd/hakios.c
+--- a/cmd/hakios.c
++++ b/cmd/hakios.c
+@@ -42,6 +42,7 @@
+ #define PAYLOAD_MAX		(SZ_64M - SZ_1M)	/* the last MiB of the 64 is the kernel's panic log */
+ #define XNUP_MAGIC		0x50554E58		/* "XNUP" */
+ #define HKUB_MAGIC		0x42554B48		/* "HKUB" */
++extern const u8 cupid_hkub[], cupid_hkub_end[];
+ #define HKUB_VERSION		1
+ 
+ struct hkub_header {
+@@ -222,6 +223,14 @@
+ 	const void *data;
+ 	u32 magic;
+ 
++	/* the container linked into U-Boot itself: no ABI handoff, no ABL ramdisk, no USB */
++	if (cupid_hkub_end > cupid_hkub && *(const u32 *)cupid_hkub == HKUB_MAGIC) {
++		printf("[oosexgang] hakios: embedded container %lu bytes\n",
++		       (ulong)(cupid_hkub_end - cupid_hkub));
++		return take_container(cupid_hkub,
++				      (ulong)(cupid_hkub_end - cupid_hkub)) ? CMD_RET_FAILURE : CMD_RET_SUCCESS;
++	}
++
+ 	if (argc >= 3) {
+ 		addr = hextoul(argv[1], NULL);
+ 		size = hextoul(argv[2], NULL);

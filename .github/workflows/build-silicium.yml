@@ -7,6 +7,23 @@ name: build-silicium-cupid
 
 on:
   workflow_dispatch:
+    inputs:
+      fd_run:
+        description: "GitHub Actions run whose cupid-uefi-binaries artifact holds the FD (empty = the pinned default)"
+        required: false
+        default: ""
+        type: string
+      fd_mode:
+        description: "FD build target the artifact was built with (RELEASE or DEBUG)"
+        required: false
+        default: RELEASE
+        type: choice
+        options: [RELEASE, DEBUG]
+      shim_diag:
+        description: "BootShim diagnostic define (e.g. -DCUPID_SHIM_BEACON: paints the splash buffer and resets; empty = normal image)"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -14,8 +31,8 @@ permissions:
 env:
   COMMON_REV: 63fc2b4633bac3af8e57dadab9f5a8d4cb940438
   HAKIOS_UEFI_REV: 1c6522893266157506c767e2ca427053ed3634a8
-  KERNEL_RUN: 44268350646
-  FD_RUN: 44253508613
+  KERNEL_RUN: 44295839504
+  FD_RUN: 44304797702
   DEVICE: cupid
 
 jobs:
@@ -35,7 +52,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            build-essential clang llvm lld make python3 python3-pip curl git unzip
+            build-essential clang llvm lld make patch python3 python3-pip curl git unzip
           clang --version | head -1
 
       - name: Clone the common repository and the UEFI helpers
@@ -55,6 +72,8 @@ jobs:
 
       - name: Download the pinned artifacts
         run: |
+          FD_RUN="${{ inputs.fd_run || env.FD_RUN }}"
+          export FD_RUN
           set -euo pipefail
           python3 - <<'PY'
           import json, os, subprocess, zipfile
@@ -88,24 +107,64 @@ jobs:
             https://raw.githubusercontent.com/Project-Silicium/Mu-Silicium/e51cd877e31c8fbb322032dc4cb6715e83d25ad3/BootShim/Makefile
           fd=$(find artifacts/fd -name SILICIUM_UEFI.fd -print -quit)
           [ -s "$fd" ] || { echo "::error ::no FD in the artifact"; exit 1; }
-          cp "$fd" "$M/Build/cupidPkg/RELEASE_CLANGPDB/FV/SILICIUM_UEFI.fd"
+          MODE="${{ inputs.fd_mode || 'RELEASE' }}"
+          mkdir -p "$M/Build/cupidPkg/${MODE}_CLANGPDB/FV"
+          cp "$fd" "$M/Build/cupidPkg/${MODE}_CLANGPDB/FV/SILICIUM_UEFI.fd"
           cp uefi/files/Resources/DTBs/cupid.dtb "$M/Resources/DTBs/cupid.dtb"
           curl -fsSL -o "$M/Resources/Scripts/mkbootimg.py" \
             https://raw.githubusercontent.com/oosexgang/hakios-sm7325/af52dfba33f91340bde68dbbe238ae583f9fd472/prebuilt/mkbootimg.py
+          # HakiOS's hakios.patch adds the "XNUP" payload copy to BootShim.S (guarded by
+          # #ifdef PAYLOAD_BASE). The raw upstream file has no such loop, so without it the
+          # payload is never moved to PAYLOAD_BASE and the firmware finds nothing at 0xB0000000.
+          # The one hunk is carried here instead of relying on the pinned hakios-uefi revision,
+          # whose patch is applied only to the full tree in build-uefi.yml.
+          ( cd "$M" && patch -p1 --forward --batch -i "$GITHUB_WORKSPACE/uefi/bootshim-payload-copy.patch" )
+          [ "$(grep -c 'PAYLOAD_BASE' "$M/BootShim/BootShim.S")" = 2 ]
+          # Bring-up diagnostic, off unless shim_diag defines it: proves the shim ran without a serial port.
+          ( cd "$M" && patch -p1 --forward --batch -i "$GITHUB_WORKSPACE/uefi/bootshim-diagnostic.patch" )
           printf 'H' > "$M/Resources/ramdisk"
           cp tools/mkxnuimg-cupid.py common/mkxnuimg.py
-          ls -l "$M/Build/cupidPkg/RELEASE_CLANGPDB/FV/SILICIUM_UEFI.fd"
+          ls -l "$M/Build/cupidPkg/${MODE}_CLANGPDB/FV/SILICIUM_UEFI.fd"
+
+      - name: Check the payload base is consistent
+        run: |
+          set -euo pipefail
+          python3 tools/payload-base-check.py --self-test
+          python3 tools/payload-base-check.py
 
       - name: Pack the payload and the boot image
         working-directory: common
+        env:
+          SHIM_CFLAGS: ${{ inputs.shim_diag }}
         run: |
           set -euo pipefail
           python3 xnuloader/mkpayload.py --usb -o payload.bin \
             loader.efi=../artifacts/kernel/cupid-loader.efi \
             kernel=../artifacts/kernel/cupid-kernel \
             ramdisk=prebuilt/userland/hello --cmdline=-v
-          python3 mkxnuimg.py -d cupid -p payload.bin -o xnu-cupid.img
+          python3 mkxnuimg.py -d cupid --mode "${{ inputs.fd_mode || 'RELEASE' }}" -p payload.bin -o xnu-cupid.img
           sha256sum xnu-cupid.img
+
+      - name: Verify the shim places the payload at the waipio base
+        working-directory: common
+        env:
+          FD_MODE: ${{ inputs.fd_mode || 'RELEASE' }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, struct, zlib
+          img = pathlib.Path('xnu-cupid.img').read_bytes()
+          size = struct.unpack_from('<I', img, 8)[0]
+          d = zlib.decompressobj(16 + zlib.MAX_WBITS)
+          blob = d.decompress(img[4096:4096 + size])
+          import os
+          fd = pathlib.Path('Mu-Silicium/Build/cupidPkg/%s_CLANGPDB/FV/SILICIUM_UEFI.fd' % os.environ.get('FD_MODE', 'RELEASE')).read_bytes()
+          shim = blob[:blob.find(fd)]
+          want = (0xD2800000 | (0xB000 << 5) | (1 << 21) | 5).to_bytes(4, 'little')  # movz x5, #0xb000, lsl #16
+          assert want in shim, 'the shim has no payload copy to 0xB0000000: hakios.patch was not applied'
+          assert blob.find(fd) + len(fd) + 4 <= len(blob) and blob[blob.find(fd) + len(fd):blob.find(fd) + len(fd) + 4] == b'XNUP', 'no XNUP payload after the FD'
+          print(f'shim {len(shim)} bytes, payload copy to 0xB0000000 present, XNUP payload present')
+          PY
 
       - name: Upload the image
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4

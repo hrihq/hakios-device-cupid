@@ -33,8 +33,12 @@ DEVICES = {
     'mayfly': dict(fd_base=0xA7100000, fd_size=0x300000, payload_base=0xB0000000, header=4, shim_cflags='-DHAKIOS_GH_WDT_OFF',
                    image_size_covers_payload=True),
     # Xiaomi 12 (cupid, SM8450): same waipio family as mayfly; FD from cupidPkg is built at 0xA7000000.
-    'cupid': dict(fd_base=0xA7000000, fd_size=0x300000, payload_base=0xB0000000, header=4, shim_cflags='-DHAKIOS_GH_WDT_OFF',
-                  image_size_covers_payload=True, os_version='13', os_patch_level='2026-11-15'),
+    # os_version and os_patch_level stay 0: mayfly's ABL takes a "fastboot boot" image only that way, and
+    # the platform's own CI-built carrier image (DeviceBuild.py) writes 0 as well. With them set, cupid
+    # answers OKAY to the download and then boots the slot instead (logfs, 2026-11-18: "Booting from
+    # slot (_a)" right after "Handling Cmd: boot").
+    'cupid': dict(fd_base=0xA7100000, fd_size=0x300000, payload_base=0xB0000000, header=4,
+                  shim_cflags='-DHAKIOS_GH_WDT_OFF', image_size_covers_payload=True),
 }
 
 ap = argparse.ArgumentParser()

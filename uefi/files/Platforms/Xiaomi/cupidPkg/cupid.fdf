@@ -41,8 +41,7 @@ READ_LOCK_STATUS   = TRUE
   !include Include/DXE.inc
   !include Include/RAW.inc
 
-  # RAM Manager
-  INF SiliciumPkg/Drivers/RamManagerDxe/RamManagerDxe.inf
+  # RAM Manager: not used (it rewrites the memory map; the waipio port boots without it)
 
   # SmBios
   INF MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
