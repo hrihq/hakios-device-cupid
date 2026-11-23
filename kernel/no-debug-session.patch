@@ -1,8 +1,15 @@
 diff --git a/xnuloader/loader.c b/xnuloader/loader.c
-index 422f9d3..93a6c12 100644
+index 422f9d3..b9410ff 100644
 --- a/xnuloader/loader.c
 +++ b/xnuloader/loader.c
-@@ -595,8 +595,10 @@ reboot(void)
+@@ -590,13 +590,17 @@ static const struct platform platform_redwood = {
+ 
+ /* ------------------------------------------------------------------------ */
+ 
++static void wdt_pet(void);
++
+ static void
+ reboot(void)
  {
  	hc_take_back("before the reset");
  	flush_log();
@@ -14,7 +21,7 @@ index 422f9d3..93a6c12 100644
  	}
  }
  
-@@ -3120,7 +3122,7 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
+@@ -3120,7 +3124,7 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
  	for (const char *c = pi.cmdline; *c; c++) {
  		own_serial |= starts_with(c, "serial=");
  	}
@@ -23,7 +30,7 @@ index 422f9d3..93a6c12 100644
  	uint32_t n = 0;
  	for (const char *c = base_cmdline; *c && n < BOOT_LINE_LENGTH - 1; c++) {
  		ba->commandLine[n++] = *c;
-@@ -3238,7 +3240,8 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
+@@ -3238,7 +3242,8 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
  	dt_prop(&w, "random-seed", seed, sizeof(seed));
  	dt_prop_u64(&w, "dram-base", phys_base);
  	dt_prop_u64(&w, "dram-size", win_size);
