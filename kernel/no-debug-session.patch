@@ -1,7 +1,29 @@
 diff --git a/xnuloader/loader.c b/xnuloader/loader.c
+index 422f9d3..93a6c12 100644
 --- a/xnuloader/loader.c
 +++ b/xnuloader/loader.c
-@@ -3238,7 +3238,8 @@
+@@ -595,8 +595,10 @@ reboot(void)
+ {
+ 	hc_take_back("before the reset");
+ 	flush_log();
+-	ST->rt->reset_system(0 /* EfiResetCold */, 0, 0, NULL);
++	print("\n[hakios] boot halted. Device staying on screen (hold power to reboot).\n");
+ 	for (;;) {
++		wdt_pet();
++		BS->stall(1000000);
+ 	}
+ }
+ 
+@@ -3120,7 +3122,7 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
+ 	for (const char *c = pi.cmdline; *c; c++) {
+ 		own_serial |= starts_with(c, "serial=");
+ 	}
+-	const char *base_cmdline = (PLAT->uart != 0 && !own_serial) ? "debug=0x8 serial=3 " : "debug=0x8 ";
++	const char *base_cmdline = (PLAT->uart != 0 && !own_serial) ? "serial=3 " : "";
+ 	uint32_t n = 0;
+ 	for (const char *c = base_cmdline; *c && n < BOOT_LINE_LENGTH - 1; c++) {
+ 		ba->commandLine[n++] = *c;
+@@ -3238,7 +3240,8 @@ run_kernel(int have_checkpoint, uint64_t checkpoint)
  	dt_prop(&w, "random-seed", seed, sizeof(seed));
  	dt_prop_u64(&w, "dram-base", phys_base);
  	dt_prop_u64(&w, "dram-size", win_size);
